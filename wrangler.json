@@ -1,0 +1,9 @@
+{
+  "name": "taco-rpg",
+  "compatibility_date": "2026-10-13",
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": "./dist"
+  }
+}
