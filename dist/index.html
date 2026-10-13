@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#10151f">
+  <meta name="description" content="Riftbound: cross a fractured kingdom in two timelines. A playable pixel art platformer RPG.">
+  <title>Riftbound — The Broken Crossing</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="shell">
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Riftbound home"><span class="brand-symbol">◇</span> RIFTBOUND</a>
+    <span class="chapter-label">PROLOGUE <span>/</span> THE BROKEN CROSSING</span>
+    <div class="top-actions"><button id="sound" aria-label="Toggle sound">♫ <span>Sound on</span></button><button id="fullscreen" aria-label="Enter fullscreen">⛶</button></div>
+  </header>
+  <section id="game-frame" class="game-frame" aria-label="Riftbound game">
+    <canvas id="game" tabindex="0" aria-label="Platformer game. Arrow keys or A and D to move, Space to jump, X to dash, Q to switch timelines, J to attack, E to talk, Tab for upgrades, Escape to pause."></canvas>
+    <div id="hud" class="hud" hidden>
+      <div class="character-hud"><span class="level" id="level">01</span><div><div class="health-row"><span>VITALITY</span><span id="health-value">100 / 100</span></div><div class="bar health"><i id="health-bar"></i></div><div class="bar xp"><i id="xp-bar"></i></div><div class="xp-label" id="xp-label">0 / 80 XP</div></div></div>
+      <div class="timeline-hud"><button id="timeline-button"><span id="timeline-dot"></span><span id="timeline-label">THE PRESENT</span><kbd>Q</kbd></button><span id="dash-state">DASH READY</span></div>
+      <div class="journey-hud"><span id="seal-count">◇ 0 / 3</span><button id="skills-button" aria-label="Open upgrades">Upgrades <span id="points-count"></span></button><button id="pause-button" aria-label="Pause game">Ⅱ</button></div>
+    </div>
+    <div id="objective" class="objective" hidden><span>YOUR JOURNEY</span><strong id="objective-text">Recover the three Echo seals</strong></div>
+    <div id="boss-hud" class="boss-hud" hidden><div>THE RIFT WARDEN <small id="boss-hint">Shift away from its aura for stronger attacks</small></div><div class="bar"><i id="boss-bar"></i></div></div>
+    <div id="zone-banner" class="zone-banner" hidden><span id="zone-subtitle"></span><strong id="zone-name"></strong></div>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <section id="menu" class="screen menu-screen">
+      <div class="menu-copy"><span class="eyebrow"><i></i> A WORLD BETWEEN TWO MOMENTS</span><h1>RIFT<span>BOUND</span></h1><div class="title-rule"></div><p>What was lost in one world<br>still waits in the other.</p><div class="menu-buttons"><button id="start" class="primary">Begin journey <span>→</span></button><button id="continue" hidden>Continue journey <span id="continue-level"></span></button><button id="help">How to play</button></div><small>THE BROKEN CROSSING · CHAPTER 01</small></div>
+      <div class="menu-caption"><span>◇</span> ONE KINGDOM.<br>TWO TIMELINES.</div>
+    </section>
+    <section id="panel" class="screen panel-screen" hidden><div class="panel-card"><span id="panel-eyebrow" class="eyebrow">JOURNEY PAUSED</span><h2 id="panel-title">Take a moment.</h2><div id="panel-content"></div><button id="panel-close" class="primary">Return to journey <span>→</span></button></div></section>
+    <div id="mobile-controls" class="mobile-controls" hidden><div><button data-input="left" aria-label="Move left">←</button><button data-input="right" aria-label="Move right">→</button><button data-input="up" aria-label="Aim dash up">↑</button></div><div><button data-input="rift" aria-label="Switch timeline">Q</button><button data-input="attack" aria-label="Attack">J</button><button data-input="dash" aria-label="Dash">X</button><button data-input="jump" aria-label="Jump">↑</button></div></div>
+  </section>
+  <footer><div class="control-guide"><span><kbd>A</kbd><kbd>D</kbd> Move</span><span><kbd>SPACE</kbd> Jump / wall jump</span><span><kbd>X</kbd> Dash</span><span><kbd>Q</kbd> Rift</span><span><kbd>J</kbd> Strike</span><span><kbd>TAB</kbd> Upgrade</span><span><kbd>ESC</kbd> Pause</span></div><span id="save-status" class="save-status">◇ Saved on this device</span></footer>
+</main>
+<noscript>This game needs JavaScript enabled.</noscript>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
