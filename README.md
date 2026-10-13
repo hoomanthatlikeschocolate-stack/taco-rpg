@@ -39,3 +39,24 @@ Run `npm test` for gameplay tests or `npm run build` to verify all game files an
 The base uses separate world data, a fixed-step physics engine, a canvas renderer, and a browser UI. Add future regions in `dist/world.js` and abilities in `dist/engine.js`.
 
 This is the first playable foundation. There are no accounts, multiplayer, or cloud saves yet.
+
+## Cloudflare Workers deployment
+
+`wrangler.json` deploys the playable files in `dist/` as static assets to the
+existing `taco-rpg` Worker.
+
+In Cloudflare, open **Workers & Pages > taco-rpg > Settings > Build** and use:
+
+| Setting | Value |
+| --- | --- |
+| Repository | `hoomanthatlikeschocolate-stack/taco-rpg` |
+| Production branch | `main` |
+| Root directory / path | `/` |
+| Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
+| Preview command | `npx wrangler versions upload` |
+
+Save the settings and retry the latest build containing `wrangler.json`.
+The preview command uploads a version without changing the live game.
+
+For local Workers development, run `npx wrangler dev`.
