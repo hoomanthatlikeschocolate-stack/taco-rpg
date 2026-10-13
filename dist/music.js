@@ -63,7 +63,7 @@ export class GameAudio{
   }
   effect(name){
     if(!this.ctx||!this.enabled)return;const now=this.ctx.currentTime;
-    if(name==='portal'||name==='anchorRecall'){this.tone(220,.2,.035,'triangle');this.tone(659,.4,.025,'sine',now+.05);}
+    if(name==='portal'||name==='recall'){this.tone(220,.2,.035,'triangle');this.tone(659,.4,.025,'sine',now+.05);}
     else if(name==='whisper')this.tone(49,.8,.018,'sine');
     else if(name==='parry'){this.tone(880,.12,.045,'triangle');this.tone(1320,.2,.028,'sine',now+.03);}
     else if(name==='clock'||name==='quiet'||name==='anchor')this.tone(587,.4,.035);
