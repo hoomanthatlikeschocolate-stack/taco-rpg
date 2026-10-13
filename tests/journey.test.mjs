@@ -39,7 +39,7 @@ test('Side quest rewards can be earned once and survive reloading',()=>{
 });
 test('Existing version-one saves keep the completed crossing and acquire its powers',()=>{
   const g=new Game({version:1,level:4,xp:22,skills:{vitality:1,edge:1,stride:1},collected:['seal-bridge','seal-canyon','seal-tower'],defeated:['e0'],checkpoint:'warden',bossDefeated:true,completed:true,played:200});
-  assert.equal(g.progress.version,2);assert.equal(g.progress.completed,true);assert.equal(g.progress.level,4);assert.equal(g.progress.xp,22);
+  assert.equal(g.progress.version,3);assert.equal(g.progress.completed,true);assert.equal(g.progress.level,4);assert.equal(g.progress.xp,22);
   assert.equal(g.hasPower('doubleJump'),true);assert.equal(g.hasPower('bolt'),true);assert.equal(g.hasPower('ward'),true);
   assert.equal(objectiveFor(g.progress).badge,'THE DROWNED ARCHIVE');
 });

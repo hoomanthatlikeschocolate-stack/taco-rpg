@@ -1,5 +1,5 @@
 export const VIEW = { width: 640, height: 360 };
-export const WORLD_WIDTH = 7600;
+export const WORLD_WIDTH = 11800;
 export const WORLD_HEIGHT = 520;
 export const SAVE_KEY = 'riftbound.journey.v1';
 export const ZONES = [
@@ -11,6 +11,10 @@ export const ZONES = [
   { x: 3890, name: 'The Warden’s Oath', subtitle: 'He was ordered to keep everyone safe. Everyone.', region: 'crossing' },
   { x: 4800, name: 'The Drowned Archive', subtitle: 'Every name the kingdom forgot is written here.', region: 'archive' },
   { x: 5900, name: 'The Listening Stacks', subtitle: 'The books open when you turn your back.', region: 'archive' },
+  { x: 7600, name: 'The Folded Atrium', subtitle: 'Distance is another lie the rift tells.', region: 'fold' },
+  { x: 8600, name: 'The Clockwell', subtitle: 'Time moves differently when nobody remembers it.', region: 'clock' },
+  { x: 9700, name: 'The Hushed Choir', subtitle: 'A hundred mouths. Not one belongs to a face.', region: 'choir' },
+  { x: 10900, name: 'The Unwritten House', subtitle: 'Something inside has been practicing your name.', region: 'house' },
   { x: 6760, name: 'The Last Remembered Room', subtitle: 'You know this voice. This time, it knows you.', region: 'archive' },
 ];
 export const SKILLS = [
@@ -27,6 +31,10 @@ export const CHECKPOINTS = [
   { id: 'warden', x: 3420, y: 400, phase: 'present', label: 'Unremembered Wood' },
   { id: 'archive', x: 4910, y: 400, phase: 'present', label: 'Drowned Archive' },
   { id: 'stacks', x: 6200, y: 400, phase: 'present', label: 'Listening Stacks' },
+  { id: 'rift-fold', x: 7660, y: 400, phase: 'past', scene: 'fold', label: 'Folded Atrium' },
+  { id: 'rift-clock', x: 8660, y: 400, phase: 'past', scene: 'clock', label: 'Clockwell' },
+  { id: 'rift-choir', x: 9760, y: 400, phase: 'present', scene: 'choir', label: 'Hushed Choir' },
+  { id: 'rift-house', x: 10960, y: 400, phase: 'past', scene: 'house', label: 'Unwritten House' },
   { id: 'last-room', x: 7000, y: 400, phase: 'present', label: 'Last Remembered Room' },
 ];
 export const ANCHORS = [
@@ -39,6 +47,7 @@ export const POWERS = [
   { id: 'doubleJump', key: 'W W', name: 'Second Wind', detail: 'One extra jump in the air. Light the Crossing Lantern.' },
   { id: 'bolt', key: 'K', name: 'Rift Bolt', detail: 'A ranged focus attack. Light the Canyon Lantern.' },
   { id: 'ward', key: 'L', name: 'Ward Pulse', detail: 'A protective burst; 5-second cooldown. Light the Woodland Lantern.' },
+  { id: 'riftAnchor', key: 'V', name: 'Rift Anchor', detail: 'Place a foothold for 6 seconds; V again returns to it. Costs 30 + 10 focus. Recover the Fold keystone.' },
   { id: 'riftStep', key: 'X X', name: 'Echo Step', detail: 'Two dashes before landing. Find Ivo in the Archive.' },
 ];
 export const LORE = [
@@ -124,7 +133,7 @@ export function makeWorld() {
   const enemies=seeds.map(e=>({...e,originY:e.y,w:e.type==='husk'?16:18,h:e.type==='husk'?24:16,
     hp:e.type==='husk'?46:e.type==='watcher'?34:28,maxHp:e.type==='husk'?46:e.type==='watcher'?34:28,
     dir:1,hurt:0,shoot:1.7,tell:0,awake:false,dead:false}));
-  return {
+  const world = {
     platforms,pickups,enemies,anchors:ANCHORS.map(a=>({...a})),lore:LORE,
     npcs:[
       {id:'maelin',x:180,y:400,name:'Maelin',role:'Lantern keeper'},
@@ -145,6 +154,85 @@ export function makeWorld() {
       aura:'present',state:'idle',timer:2.5,cycle:0,tell:0,charge:0,chargeDir:1},
     gate:{x:4640,y:400}
   };
+  addRiftWorld(world);return world;
 }
 export function activeIn(phase,timeline){return phase==='both'||phase===timeline;}
-export function zoneAt(x){return [...ZONES].reverse().find(z=>x>=z.x)||ZONES[0];}
+export function zoneAt(x){return [...ZONES].sort((a,b)=>b.x-a.x).find(z=>x>=z.x)||ZONES[0];}
+
+export const SCENES = {
+  overworld:{left:0,right:7600,label:'The Crossing & Archive'},
+  fold:{left:7600,right:8520,label:'The Folded Atrium'},
+  clock:{left:8600,right:9620,label:'The Clockwell'},
+  choir:{left:9700,right:10800,label:'The Hushed Choir'},
+  house:{left:10900,right:11800,label:'The Unwritten House'}
+};
+export const RIFT_CORES = [
+  {id:'rift-core-fold',scene:'fold',x:8470,y:370,phase:'present',name:'The Fold keystone',doorX:530},
+  {id:'rift-core-clock',scene:'clock',x:9550,y:370,phase:'past',name:'The Clock keystone',doorX:2660},
+  {id:'rift-core-choir',scene:'choir',x:10730,y:340,phase:'present',name:'The Choir keystone',doorX:5740}
+];
+export function sceneUnlocked(scene,p){
+  if(scene==='fold')return p.anchors.includes('anchor-bridge');
+  if(scene==='clock')return p.anchors.includes('anchor-tower');
+  if(scene==='choir')return p.archiveComplete;
+  if(scene==='house')return p.archiveComplete&&RIFT_CORES.every(c=>p.collected.includes(c.id));
+  return scene==='overworld';
+}
+function addRiftWorld(w){
+  let n=0;
+  const add=(scene,x,y,width,height=22,phase='both',extra={})=>w.platforms.push({id:'rift-platform-'+n++,scene,x,y,w:width,h:height,phase,originX:x,previousX:x,...extra});
+  add('fold',7600,400,190,160);add('fold',7830,355,80,22,'past');
+  add('fold',8210,310,70,22,'past');add('fold',8300,350,70,22,'past');add('fold',8410,400,110,160);
+  add('clock',8600,400,220,160);add('clock',8850,351,80,22,'present');
+  add('clock',8950,315,70,22,'both',{timed:{period:3.6,on:2.1,offset:.4}});
+  add('clock',9040,272,65,22,'past',{timed:{period:3.6,on:2.1,offset:1.2}});
+  add('clock',9130,320,85,22,'present');
+  add('clock',9240,270,75,22,'both',{timed:{period:3.6,on:2.1,offset:2}});
+  add('clock',9340,330,85,22,'past',{timed:{period:3.6,on:2.1,offset:.2}});add('clock',9470,400,150,160);
+  add('choir',9700,400,200,160);
+  add('choir',9930,363,90,22,'both',{relay:'choir-bridge'});
+  add('choir',10060,328,85,22,'past',{relay:'choir-bridge'});
+  add('choir',10190,355,85,22,'present',{relay:'choir-bridge'});
+  add('choir',10340,400,120,160);add('choir',10500,347,85,22,'past');add('choir',10640,400,160,160);
+  add('choir',10680,370,90,30);
+  add('house',10900,400,900,160);add('house',11090,326,65,22,'present');add('house',11280,278,70,22,'past');
+  add('house',11470,322,80,22,'both',{moving:true,amplitude:22,speed:.85});
+  for(const x of [1678,1900]){const p=w.platforms.find(p=>p.x===x);if(p)p.crumble=.6;}
+  w.portals=[
+    {id:'fold-door',scene:'overworld',x:530,y:365,phase:'both',target:'fold-return',door:true,unlock:'fold',glyph:'I',name:'Folded Atrium rift'},
+    {id:'fold-return',exitPhase:'past',scene:'fold',x:7660,y:370,phase:'both',target:'fold-door',door:true,glyph:'I',name:'Return to the Crossing'},
+    {id:'clock-door',scene:'overworld',x:2660,y:365,phase:'both',target:'clock-return',door:true,unlock:'clock',glyph:'II',name:'Clockwell rift'},
+    {id:'clock-return',exitPhase:'past',scene:'clock',x:8660,y:370,phase:'both',target:'clock-door',door:true,glyph:'II',name:'Return to the Tower'},
+    {id:'choir-door',scene:'overworld',x:5740,y:306,phase:'both',target:'choir-return',door:true,unlock:'choir',glyph:'III',name:'Hushed Choir rift'},
+    {id:'choir-return',exitPhase:'present',scene:'choir',x:9760,y:370,phase:'both',target:'choir-door',door:true,glyph:'III',name:'Return to the Archive'},
+    {id:'house-door',scene:'overworld',x:3430,y:365,phase:'both',target:'house-return',door:true,unlock:'house',glyph:'IV',name:'Unwritten House rift'},
+    {id:'house-return',exitPhase:'past',scene:'house',x:10960,y:370,phase:'both',target:'house-door',door:true,glyph:'IV',name:'Return to the Wood'},
+    {id:'fold-launch',scene:'fold',x:7880,y:306,phase:'past',target:'fold-catch',glyph:'A',name:'Fold aperture',dx:1,dy:0},
+    {id:'fold-catch',scene:'fold',x:8120,y:230,phase:'present',target:'fold-launch',glyph:'A',name:'Fold aperture',dx:-1,dy:-.25},
+    {id:'choir-launch',scene:'choir',x:9930,y:303,phase:'present',target:'choir-catch',glyph:'B',name:'The loud shortcut',dx:1,dy:0},
+    {id:'choir-catch',scene:'choir',x:10400,y:253,phase:'present',target:'choir-launch',glyph:'B',name:'The loud shortcut',dx:-1,dy:0},
+    {id:'canyon-stitch',scene:'overworld',x:1760,y:258,phase:'present',target:'tower-stitch',glyph:'C',unlock:'fold',name:'Canyon stitch',dx:1,dy:-.15},
+    {id:'tower-stitch',scene:'overworld',x:2540,y:207,phase:'past',target:'canyon-stitch',glyph:'C',unlock:'fold',name:'Tower stitch',dx:-1,dy:0},
+    {id:'arena-left',scene:'house',x:11070,y:360,phase:'past',target:'arena-right',glyph:'D',name:'Flanking aperture',dx:1,dy:0},
+    {id:'arena-right',scene:'house',x:11650,y:230,phase:'present',target:'arena-left',glyph:'D',name:'Flanking aperture',dx:1,dy:-.2}
+  ];
+  for(const c of RIFT_CORES)w.pickups.push({...c,type:'core',xp:95,radius:12});
+  w.npcs.push({id:'orin',scene:'fold',x:7730,y:400,name:'Orin',role:'A cartographer without a face'});
+  w.lore=[...w.lore,
+    {id:'lore-fold',scene:'fold',x:7685,y:400,name:'A map of the impossible',text:'Two apertures with the same mark are the same wound. Dash into one and your momentum survives the crossing. The exit may face another realm. Gold ledges belong to Before. Violet ledges belong to the Hollow. A door marked E can be entered at rest.',xp:20},
+    {id:'lore-clock',scene:'clock',x:8760,y:400,name:'Six borrowed seconds',text:'A Rift Bolt into the clock eye holds the shifting ledges solid for six seconds. They still belong to their own realms. Choose when to spend that time. Choose whether to spend focus on the clock, on a Ward, or on a place to return to.',xp:20},
+    {id:'lore-choir',scene:'choir',x:9800,y:400,name:'What the choir hears',text:'Stand on the quiet stone and hold S. A moment of stillness opens the slow path. The aperture above the gap is faster, but it will tell the Hollow exactly where you are. The thing behind you follows noise. Lanterns and Before make it lose your scent.',xp:20},
+    {id:'lore-house',scene:'house',x:11000,y:400,name:'A name being rehearsed',text:'It cannot invent a life. It can only copy one. Make it expect a dash, then jump. Make it expect a bolt, then flank it. Its body is stolen. The wound in its chest is real.',xp:25}
+  ];
+  w.switches.push({id:'clock-stop',scene:'clock',x:8790,y:382,name:'Clock eye'});
+  w.plates=[{id:'choir-bridge',scene:'choir',x:9820,y:400,w:54,duration:7,charge:1.2}];
+  w.refills.push({x:7940,y:270,ready:0},{x:9175,y:272,ready:0},{x:10540,y:287,ready:0});
+  w.hazards.push({scene:'clock',x:9180,y:290,range:38,speed:1.8,r:10,phase:'present'});
+  const sentinel=(id,x,min,max,scene)=>({id,type:'sentinel',scene,x,y:374,originY:374,min,max,phase:'both',w:20,h:26,hp:65,maxHp:65,dir:-1,hurt:0,shoot:2,tell:0,awake:true,dead:false,stun:0,guardBroken:0});
+  w.enemies.push(sentinel('sentinel-clock',9500,9480,9570,'clock'),sentinel('sentinel-house',11720,11670,11770,'house'));
+  for(const e of w.enemies){e.stun=0;e.guardBroken=0;}
+  w.borrowed={id:'borrowed',name:'THE BORROWED',scene:'house',x:11400,y:358,w:22,h:42,hp:380,maxHp:380,
+    active:false,dead:false,aura:'present',hurt:0,state:'idle',timer:2.6,tell:0,cycle:0,copy:'jump',warning:'',rush:0,dir:-1};
+  w.loom={id:'memory-loom',scene:'house',x:11400,y:400,name:'The memory loom'};
+}
+export const ALL_LORE = makeWorld().lore;

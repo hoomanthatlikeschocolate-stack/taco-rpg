@@ -3,6 +3,7 @@ const themes={
   before:{bpm:86,melody:[0,7,12,10,7,5,3,7,0,3,7,15,12,10,7,3],chords:[[0,3,7],[-5,0,3],[-7,-3,0],[-2,2,5]],type:'triangle'},
   hollow:{bpm:70,melody:[0,null,7,null,1,null,12,7,-5,null,3,null,1,0,null,-2],chords:[[0,3,7],[-5,0,6],[-7,-3,0],[-2,1,5]],type:'sine'},
   archive:{bpm:78,melody:[12,7,3,0,2,7,10,null,12,15,14,10,7,3,2,0],chords:[[0,3,7],[-7,-3,0],[-5,0,3],[-2,2,5]],type:'sine'},
+  rift:{bpm:94,melody:[0,7,10,12,3,null,2,7,0,12,14,10,7,3,2,null],chords:[[0,3,7],[-5,0,6],[-7,-3,0],[-2,2,5]],type:'triangle'},
   boss:{bpm:124,melody:[0,0,7,3,0,10,7,3,-5,-5,3,0,-2,5,7,2],chords:[[0,3,7],[-5,0,3],[-7,-3,0],[-2,2,5]],type:'triangle'}
 };
 export class GameAudio{
@@ -44,7 +45,7 @@ export class GameAudio{
     const active=['play','dialogue','power','complete','journal'].includes(mode),now=this.ctx.currentTime;
     this.master.gain.setTargetAtTime(active?this.volume:0,now,.1);
     if(!active){this.next=now+.05;return;}
-    const theme=game.world.boss.active&&!game.world.boss.dead?'boss':game.player.x>=4800?'archive':game.timeline==='present'?'hollow':'before';
+    const theme=game.fightingBoss()?'boss':game.scene!=='overworld'?'rift':game.player.x>=4800?'archive':game.timeline==='present'?'hollow':'before';
     if(theme!==this.theme){this.theme=theme;this.step=0;this.next=now+.04;}
     if(this.next<now)this.next=now+.03;
     const score=themes[theme],beat=60/score.bpm/2;
@@ -62,7 +63,12 @@ export class GameAudio{
   }
   effect(name){
     if(!this.ctx||!this.enabled)return;const now=this.ctx.currentTime;
-    if(name==='level'||name==='power'||name==='quest'){[0,4,7,12].forEach((n,i)=>this.tone(notes(n+12),.5,.045,'triangle',now+i*.11));}
+    if(name==='portal'||name==='anchorRecall'){this.tone(220,.2,.035,'triangle');this.tone(659,.4,.025,'sine',now+.05);}
+    else if(name==='whisper')this.tone(49,.8,.018,'sine');
+    else if(name==='parry'){this.tone(880,.12,.045,'triangle');this.tone(1320,.2,.028,'sine',now+.03);}
+    else if(name==='clock'||name==='quiet'||name==='anchor')this.tone(587,.4,.035);
+    else if(name==='guard'||name==='crack')this.tone(125,.13,.033,'triangle');
+    else if(name==='level'||name==='power'||name==='quest'){[0,4,7,12].forEach((n,i)=>this.tone(notes(n+12),.5,.045,'triangle',now+i*.11));}
     else if(name==='jump'||name==='climb')this.tone(390,.08,.026,'triangle');
     else if(name==='doubleJump'){this.tone(523,.14,.032,'triangle');this.tone(784,.18,.023,'sine',now+.04);}
     else if(name==='dash')this.tone(175,.13,.04,'triangle');

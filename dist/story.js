@@ -1,9 +1,11 @@
-import { ANCHORS, ARCHIVE_PAGES, LORE, PAGE_TEXT } from './world.js';
+import { riftObjective, riftDialogue } from './rift-story.js';
+import { ANCHORS, ARCHIVE_PAGES, ALL_LORE as LORE, PAGE_TEXT, RIFT_CORES } from './world.js';
 const line=(speaker,text)=>({speaker,text});
 const conversation=(name,role,lines,extra={})=>({name,role,lines,...extra});
 const has=(p,id)=>p.collected.includes(id);
 
-export function objectiveFor(p) {
+export function objectiveFor(p,scene='overworld') {
+  const rift=riftObjective(p,scene);if(rift)return rift;
   if(!p.met.includes('maelin'))return {title:'Find out what happened to Ivo',hint:'Speak to Maelin at the lantern camp. E talks and reads.',target:{x:180,y:365},step:'1 / 9',badge:'THE MISSING BROTHER'};
   for(let i=0;i<ANCHORS.length;i++){
     const a=ANCHORS[i],labels=['Crossing','Canyon','Tower'];
@@ -32,6 +34,7 @@ export function objectiveFor(p) {
 export function questRows(p) {
   const gears=p.collected.filter(id=>id.startsWith('gear-')).length;
   return [
+    {name:'The Unwritten House',done:p.houseComplete,detail:p.houseComplete?(p.riftEnding==='remember'?'The lost names returned. Hollow dread rises more slowly.':'The voice is bound. Ward recharges in four seconds.'):(RIFT_CORES.filter(c=>has(p,c.id)).length+' / 3 keystones. Fold, Clockwell and Choir open the House after Ivo’s story.')},
     {name:'The missing brother',done:p.completed,detail:p.completed?'The Crossing is restored; Lumen has been freed.':p.anchors.length+' / 3 lanterns lit. Recover the Echoes and break the Warden’s oath.'},
     {name:'The Drowned Archive',done:p.archiveComplete,detail:p.archiveComplete?(p.ending==='home'?'You chose to carry Ivo’s memory home.':'You chose to keep searching with Ivo’s echo.'):ARCHIVE_PAGES.filter(id=>has(p,id)).length+' / 3 pages. Find the truth beyond the restored gate.'},
     {name:'A crow out of time',done:p.gearsReturned,detail:p.gearsReturned?'Pip is repaired. +20 focus and a wider pickup reach.':gears+' / 3 gears. Return them to Pip beside the Crossing Lantern.'},
@@ -43,6 +46,7 @@ export function questRows(p) {
 }
 
 export function dialogueFor(event,game) {
+  const extra=riftDialogue(event,game);if(extra)return extra;
   const p=game.progress,dark=game.timeline==='present',id=event.id;
   const a=ANCHORS.find(a=>a.id===id);
   if(a)return conversation('The lantern','A NAME RETURNED',[

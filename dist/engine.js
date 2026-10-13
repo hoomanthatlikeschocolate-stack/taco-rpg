@@ -1,17 +1,18 @@
-import { makeWorld, activeIn, CHECKPOINTS, SKILLS, ANCHORS, ARCHIVE_PAGES, WORLD_WIDTH, WORLD_HEIGHT, zoneAt } from './world.js';
+import { installRifts } from './rifts.js';
+import { makeWorld, activeIn, CHECKPOINTS, SKILLS, ANCHORS, ARCHIVE_PAGES, WORLD_WIDTH, WORLD_HEIGHT, zoneAt, RIFT_CORES, sceneUnlocked } from './world.js';
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const approach=(v,target,step)=>v<target?Math.min(target,v+step):Math.max(target,v-step);
 export const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 export const xpRequired=level=>80+(level-1)*35;
 export function freshProgress(){
-  return {version:2,level:1,xp:0,skillPoints:0,skills:{vitality:0,edge:0,stride:0,focus:0},
+  return {version:3,level:1,xp:0,skillPoints:0,skills:{vitality:0,edge:0,stride:0,focus:0},
     collected:[],defeated:[],anchors:[],met:[],lore:[],opened:[],switches:[],visited:['approach'],
     checkpoint:'approach',bossDefeated:false,completed:false,archiveComplete:false,ending:null,
-    gearsReturned:false,lanternReturned:false,trialBest:0,deaths:0,played:0};
+    houseBossDefeated:false,houseComplete:false,riftEnding:null,gearsReturned:false,lanternReturned:false,trialBest:0,deaths:0,played:0};
 }
 export function cleanProgress(input){
   const p=freshProgress();
-  if(!input||![1,2].includes(input.version))return p;
+  if(!input||![1,2,3].includes(input.version))return p;
   const integer=(v,max)=>Number.isFinite(v)?clamp(Math.floor(v),0,max):0;
   const ids=(list,valid)=>[...new Set(Array.isArray(list)?list:[])].filter(id=>valid.includes(id));
   const world=makeWorld();
@@ -33,12 +34,19 @@ export function cleanProgress(input){
   p.ending=['home','search'].includes(input.ending)?input.ending:null;
   p.archiveComplete=input.archiveComplete===true&&p.completed&&ARCHIVE_PAGES.every(id=>p.collected.includes(id))&&!!p.ending;
   if(!p.archiveComplete)p.ending=null;
+  p.collected=p.collected.filter(id=>!id.startsWith('rift-core-')||sceneUnlocked(RIFT_CORES.find(c=>c.id===id)?.scene,p));
+  p.houseBossDefeated=input.houseBossDefeated===true&&p.archiveComplete&&RIFT_CORES.every(c=>p.collected.includes(c.id));
+  p.riftEnding=['remember','bind'].includes(input.riftEnding)?input.riftEnding:null;
+  p.houseComplete=input.houseComplete===true&&p.houseBossDefeated&&!!p.riftEnding;
+  if(!p.houseComplete)p.riftEnding=null;
   p.gearsReturned=input.gearsReturned===true&&p.collected.filter(id=>id.startsWith('gear-')).length===3;
   p.lanternReturned=input.lanternReturned===true&&p.collected.includes('lantern-glass');
   p.trialBest=Number.isFinite(input.trialBest)&&input.trialBest>0&&input.trialBest<=world.trial.limit?input.trialBest:0;
   p.checkpoint=CHECKPOINTS.some(c=>c.id===input.checkpoint)?input.checkpoint:'approach';
-  if(!p.completed&&CHECKPOINTS.find(c=>c.id===p.checkpoint).x>=4800)p.checkpoint='warden';
-  p.visited=ids(input.visited,CHECKPOINTS.filter(c=>p.completed||c.x<4800).map(c=>c.id));
+  const cp=CHECKPOINTS.find(c=>c.id===p.checkpoint);
+  if(cp.scene&&!sceneUnlocked(cp.scene,p))p.checkpoint='approach';
+  else if(!cp.scene&&!p.completed&&cp.x>=4800)p.checkpoint='warden';
+  p.visited=ids(input.visited,CHECKPOINTS.filter(c=>c.scene?sceneUnlocked(c.scene,p):(p.completed||c.x<4800)).map(c=>c.id));
   if(input.version===1)p.visited=CHECKPOINTS.filter(c=>c.x<=CHECKPOINTS.find(c=>c.id===p.checkpoint).x).map(c=>c.id);
   p.visited=[...new Set(['approach',...p.visited,p.checkpoint])];
   p.deaths=integer(input.deaths,100000);p.played=Number.isFinite(input.played)?clamp(input.played,0,10000000):0;
@@ -55,14 +63,15 @@ export class Game{
     this.player={x:cp.x,y:cp.y-22,w:12,h:22,vx:0,vy:0,facing:1,grounded:false,groundId:null,wall:0,
       coyote:0,buffer:0,wallLock:0,climbing:false,doubleUsed:false,dashTime:0,dashReady:true,dashes:this.maxDashes,dashX:0,dashY:0,
       riftCooldown:0,attack:0,attackCooldown:0,attackHits:[],combo:0,comboWindow:0,
-      boltCooldown:0,wardCooldown:0,wardTime:0,focus:this.maxFocus,invincible:0,hp:this.maxHealth,dead:false};
+      boltCooldown:0,wardCooldown:0,wardTime:0,focus:this.maxFocus,invincible:0,hp:this.maxHealth,dead:false,finisherCharged:false,sneaking:false};
+    this.initRifts();
   }
   get maxHealth(){return 100+this.progress.skills.vitality*20+(this.progress.lanternReturned?10:0)+(this.progress.ending==='home'?10:0);}
-  get maxFocus(){return 100+this.progress.skills.focus*20+(this.progress.gearsReturned?20:0);}
+  get maxFocus(){return 100+this.progress.skills.focus*20+(this.progress.gearsReturned?20:0)+(this.progress.houseComplete?20:0);}
   get damage(){return 12+this.progress.skills.edge*4;}
   get maxDashes(){return this.hasPower('riftStep')?2:1;}
   get seals(){return this.progress.collected.filter(id=>id.startsWith('seal-')).length;}
-  hasPower(id){return id==='dash'||(id==='riftStep'&&this.progress.archiveComplete)||ANCHORS.some(a=>a.power===id&&this.progress.anchors.includes(a.id));}
+  hasPower(id){return id==='dash'||(id==='riftAnchor'&&this.progress.collected.includes('rift-core-fold'))||(id==='riftStep'&&this.progress.archiveComplete)||ANCHORS.some(a=>a.power===id&&this.progress.anchors.includes(a.id));}
   emit(type,data={}){this.events.push({type,...data});}
   drainEvents(){return this.events.splice(0);}
   save(){this.emit('save');}
@@ -147,7 +156,7 @@ export class Game{
     if(p.wardCooldown>0)return false;if(p.focus<34){this.emit('toast',{text:'Ward needs 34 focus. Let your lantern recover.'});return false;}
     p.focus-=34;p.wardCooldown=5;p.wardTime=1.35;
     this.projectiles=this.projectiles.filter(o=>o.team==='player'||Math.hypot(o.x-p.x,o.y-p.y)>145);
-    for(const e of this.world.enemies)if(activeIn(e.phase,this.timeline)&&Math.hypot(e.x-p.x,e.y-p.y)<105)this.hitEnemy(e,24);
+    for(const e of this.world.enemies)if(activeIn(e.phase,this.timeline)&&Math.hypot(e.x-p.x,e.y-p.y)<105)this.hitEnemy(e,24,{kind:'ward'});
     const b=this.world.boss;if(b.active&&Math.hypot(b.x-p.x,b.y-p.y)<100)this.hitBoss(20);
     this.burst(p.x+6,p.y+11,'#a9fff2',40,150);this.emit('ward');return true;
   }
@@ -190,7 +199,7 @@ export class Game{
       p.opened.push(o.id);this.player.hp=Math.min(this.maxHealth,this.player.hp+35);this.player.focus=this.maxFocus;
       this.gainXP(o.xp);this.emit('toast',{text:o.name+' opened · +'+o.xp+' XP · health and focus restored'});this.burst(o.x,o.y-10,'#ffce7d',25,85);return true;
     }
-    if(o.kind==='switch'){this.emit('toast',{text:'Face the floodgate eye and fire a Rift Bolt with K.'});return true;}
+    if(o.kind==='switch'){this.emit('toast',{text:o.id==='clock-stop'?'Fire K into the clock eye to hold the shifting ledges for 6 seconds.':'Face the floodgate eye and fire a Rift Bolt with K.'});return true;}
     if(o.kind==='trial')return this.startTrial();
     return false;
   }
@@ -248,14 +257,14 @@ export class Game{
       p.vx=p.dashX*550;p.vy=p.dashY*550;this.emit('dash');this.burst(p.x+6,p.y+11,'#99f3ed',8,70);
     }
     if(input.attack&&p.attackCooldown<=0){
-      p.combo=p.comboWindow>0?p.combo%3+1:1;p.comboWindow=.85;p.attack=.2;p.attackCooldown=p.combo===3?.38:.29;p.attackHits=[];this.emit('swing',{combo:p.combo});
+      p.combo=p.comboWindow>0?p.combo%3+1:1;p.comboWindow=.85;p.attack=.2;p.attackCooldown=p.combo===3?.38:.29;p.attackHits=[];p.finisherCharged=p.combo===3&&p.focus>=12;if(p.finisherCharged)p.focus-=12;this.emit('swing',{combo:p.combo});
     }
     if(pressed('bolt'))this.castBolt(input);if(pressed('ward'))this.castWard();
     if(move&&p.wallLock<=0)p.facing=move;
     p.climbing=false;
     if(p.dashTime>0){p.vx=p.dashX*550;p.vy=p.dashY*550;if(this.trails.length<25)this.trails.push({x:p.x,y:p.y,facing:p.facing,life:.2});}
     else{
-      if(p.wallLock<=0)p.vx=approach(p.vx,move*185,(p.grounded?1750:1200)*dt);
+      if(p.wallLock<=0)p.vx=approach(p.vx,move*(p.sneaking?78:185),(p.grounded?1750:1200)*dt);
       p.vy=Math.min(570,p.vy+1100*dt);
       if(!input.jump&&p.vy<-175)p.vy=-175;
       if(p.wall&&move===p.wall&&p.wallLock<=0){
@@ -292,12 +301,14 @@ export class Game{
       if(Math.hypot(p.x+6-item.x,p.y+11-item.y)<item.radius+(this.progress.gearsReturned?24:13)){
         this.progress.collected.push(item.id);this.gainXP(item.xp);this.burst(item.x,item.y,item.type==='seal'?'#ffd698':'#aef9de',item.type==='seal'?22:9,60);
         this.float('+'+item.xp+' XP',item.x,item.y-12,'#bdf6d5');this.emit('collect',{id:item.id,kind:item.type,name:item.name});
+        if(item.type==='core'){this.emit('core',{id:item.id});if(item.id==='rift-core-fold')this.emit('toast',{text:'RIFT ANCHOR AWAKENED · V places a 6-second foothold; V again returns to it. 30 + 10 focus.'});}
       }
     }
     for(const r of this.world.refills){r.ready=Math.max(0,r.ready-dt);
       if(r.ready===0&&Math.hypot(p.x+6-r.x,p.y+11-r.y)<18){this.refillMovement();r.ready=2;this.burst(r.x,r.y,'#90f4f2',14,50);this.emit('refill');}}
     for(const cp of CHECKPOINTS){
-      if(cp.x>=4800&&!this.progress.completed)continue;
+      if((cp.scene||'overworld')!==this.scene)continue;
+      if(!cp.scene&&cp.x>=4800&&!this.progress.completed)continue;
       if(cp.id!==this.progress.checkpoint&&Math.abs(p.x-cp.x)<18&&Math.abs(p.y+p.h-cp.y)<24){
         this.progress.checkpoint=cp.id;if(!this.progress.visited.includes(cp.id))this.progress.visited.push(cp.id);
         p.hp=this.maxHealth;p.focus=this.maxFocus;this.emit('checkpoint',{name:cp.label});this.burst(cp.x,cp.y-25,'#aae7ef',22,70);this.save();
@@ -317,12 +328,12 @@ export class Game{
   updateEnemies(dt,attackBox,previousBottom){
     const p=this.player;
     for(const e of this.world.enemies){
-      e.hurt=Math.max(0,e.hurt-dt);e.tell=Math.max(0,e.tell-dt);
+      e.hurt=Math.max(0,e.hurt-dt);e.stun=Math.max(0,(e.stun||0)-dt);e.guardBroken=Math.max(0,(e.guardBroken||0)-dt);e.guardHit=Math.max(0,(e.guardHit||0)-dt);e.tell=Math.max(0,e.tell-dt);
       if(e.dead||!activeIn(e.phase,this.timeline))continue;
       const near=Math.abs(p.x-e.x)<290;
       if(e.type==='watcher'){
         e.y=e.originY+Math.sin(this.time*1.6+e.x)*4;
-        if(near){e.shoot-=dt;if(e.shoot<.5)e.tell=.5;
+        if(near&&e.stun<=0){e.shoot-=dt;if(e.shoot<.5)e.tell=.5;
           if(e.shoot<=0){const a=Math.atan2(p.y+11-e.y-8,p.x+6-e.x-9);
             this.projectiles.push({x:e.x+9,y:e.y+8,vx:Math.cos(a)*145,vy:Math.sin(a)*145,r:4,life:3,damage:17,phase:e.phase,team:'enemy'});
             e.shoot=2.3;e.tell=0;this.emit('watcher');}}
@@ -332,12 +343,13 @@ export class Game{
         if(e.type==='husk'&&near){e.dir=Math.sign(p.x-e.x)||e.dir;e.shoot-=dt;if(e.shoot<.5)e.tell=.45;
           if(e.shoot<=0){e.rush=.38;e.rushDir=e.dir;e.shoot=2.5;}if(e.rush>0){e.rush-=dt;speed=190;e.dir=e.rushDir;}}
         if(e.type==='mimic'){speed=e.awake?100:0;if(e.awake)e.dir=Math.sign(p.x-e.x)||e.dir;}
+        if(e.stun>0)speed=0;
         e.x+=e.dir*speed*dt*(e.hurt>0?.2:1);
         if(e.x<e.min){e.x=e.min;e.dir=1;}if(e.x>e.max){e.x=e.max;e.dir=-1;}
         if(e.type==='wisp')e.y=e.originY+Math.sin(this.time*2.3+e.min)*12;
       }
-      if(p.attack>0&&overlaps(attackBox,e)&&!p.attackHits.includes(e.id)){p.attackHits.push(e.id);this.hitEnemy(e,Math.ceil(this.damage*(p.combo===3?1.6:1)));}
-      if(!e.dead&&overlaps(p,e)){
+      if(p.attack>0&&overlaps(attackBox,e)&&!p.attackHits.includes(e.id)){p.attackHits.push(e.id);this.hitEnemy(e,Math.ceil(this.damage*(p.finisherCharged?1.6:1)),{kind:'sword',x:p.x,finisher:p.finisherCharged});}
+      if(!e.dead&&e.stun<=0&&overlaps(p,e)){
         if(p.vy>40&&previousBottom<=e.y+8&&e.type!=='husk'){this.hitEnemy(e,20);p.vy=-330;this.refillMovement();}
         else if(p.dashTime>0)this.hitEnemy(e,12);else this.hurt(e.type==='husk'?22:16,e.x+e.w/2);
       }
@@ -350,11 +362,13 @@ export class Game{
       const box={x:o.x-o.r,y:o.y-o.r,w:o.r*2,h:o.r*2};
       if(o.team==='player'){
         for(const s of this.world.switches)if(!this.progress.switches.includes(s.id)&&Math.hypot(o.x-s.x,o.y-s.y)<o.r+13){
+          if(s.id==='clock-stop'){this.freezeClocks();return false;}
           this.progress.switches.push(s.id);this.gainXP(35);this.burst(s.x,s.y,'#ffe2a0',25,85);this.emit('toast',{text:'Floodgate opened. The last page is waiting beyond it.'});this.emit('switch');return false;
         }
-        for(const e of this.world.enemies)if(!e.dead&&activeIn(e.phase,o.phase)&&overlaps(box,e)){this.hitEnemy(e,o.damage);return false;}
+        for(const e of this.world.enemies)if(!e.dead&&activeIn(e.phase,o.phase)&&overlaps(box,e)){this.hitEnemy(e,o.damage,{kind:'bolt'});return false;}
         const b=this.world.boss;if(b.active&&!b.dead&&overlaps(box,b)){this.hitBoss(o.damage,o.phase);return false;}
-      }else if(activeIn(o.phase,this.timeline)&&overlaps(p,box)){if(p.dashTime<=0)this.hurt(o.damage,o.x);return false;}
+        const borrowed=this.world.borrowed;if(borrowed.active&&!borrowed.dead&&overlaps(box,borrowed)){this.hitBorrowed(o.damage,o.phase);return false;}
+      }else if(activeIn(o.phase,this.timeline)&&overlaps(p,box)){if(p.wardTime>1.15)return this.reflectProjectile(o);if(p.dashTime<=0)this.hurt(o.damage,o.x);return false;}
       if(this.solids(o.phase).some(s=>overlaps(box,s)))return false;
       return true;
     });
@@ -381,7 +395,9 @@ export class Game{
       else{for(const dir of [-1,1])this.projectiles.push({x,y:392,vx:dir*195,vy:0,r:7,life:3,damage:25,phase:'both',team:'enemy'});this.shake=.17;}
       b.aura=b.aura==='past'?'present':'past';this.emit('bossCast',{pattern});
     }
-    if(p.attack>0&&overlaps(attackBox,b)&&!p.attackHits.includes(b.id)){p.attackHits.push(b.id);this.hitBoss(this.damage*(p.combo===3?1.6:1));}
+    if(p.attack>0&&overlaps(attackBox,b)&&!p.attackHits.includes(b.id)){p.attackHits.push(b.id);this.hitBoss(this.damage*(p.finisherCharged?1.6:1));}
     if(!b.dead&&overlaps(p,b)&&p.dashTime<=0)this.hurt(b.state==='rushing'?28:23,b.x+14);
   }
 }
+
+installRifts(Game);
