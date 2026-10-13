@@ -35,7 +35,7 @@ test('Respawn keeps earned XP, collected seals, and upgrades',()=>{
   g.respawn();assert.equal(g.player.x,2160);assert.equal(g.progress.level,2);assert.equal(g.damage,16);assert.equal(g.seals,1);assert.equal(g.player.hp,g.maxHealth);
 });
 test('Saved rewards and completed bosses remain completed after loading',()=>{
-  const g=new Game();g.progress.defeated=['e0'];g.progress.bossDefeated=true;g.progress.collected=['seal-bridge','seal-canyon','seal-tower'];g.progress.completed=true;
+  const g=new Game();g.progress.defeated=['e0'];g.progress.bossDefeated=true;g.progress.collected=['seal-bridge','seal-canyon','seal-tower'];g.progress.anchors=['anchor-bridge','anchor-canyon','anchor-tower'];g.progress.completed=true;
   const loaded=new Game(JSON.parse(JSON.stringify(g.progress)));assert.equal(loaded.world.enemies[0].dead,true);assert.equal(loaded.world.boss.dead,true);assert.equal(loaded.progress.completed,true);
 });
 test('Corrupt save values cannot break physics or inject unknown rewards',()=>{

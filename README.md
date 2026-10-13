@@ -1,62 +1,69 @@
-# Riftbound
+# Riftbound — The Unremembering
 
-A browser-based pixel art platformer RPG. The playable prologue, **The Broken Crossing**, takes place in the past and present of one fractured kingdom.
+A browser platformer RPG about a missing brother, a kingdom that traded away its memories, and the dark world that learned to use them.
 
-## Playable base
+## Play
 
-- Accelerated movement, variable-height jumps, coyote time, buffered jumps, wall slides and wall jumps.
-- Eight-direction dash, landing recharge, and floating dash refill crystals.
-- Past/present timeline switching with alternate platforms and protection against shifting into solid walls.
-- Sword combat, enemy stomping, seven enemies, and a telegraphed Rift Warden boss.
-- XP, levels, skill points, three upgrade paths, three Echo seals, and a hidden bell.
-- Five checkpoints. Progress saves on the current device; deaths preserve earned progress.
-- Pause, controls, original procedural pixel scenery, synthesized audio, fullscreen, and touch controls.
+Play through **The Broken Crossing** and **The Drowned Archive**. Speak to Maelin, recover the three Echoes, restore their lanterns, free Captain Lumen from his oath, and follow Ivo's torn pages into the Archive. The final conversation offers two endings; both let you keep exploring.
+
+- W jumping, forgiving jump buffering, continuous wall climbing and automatic ledge pull-ups.
+- Eight-direction dash, double jump, ranged Rift Bolts, protective Ward Pulse and a second air dash.
+- Four upgrade paths, XP, levels, focus, health, checkpoints and unlocked fast travel.
+- Distinct characters, changing conversations, seven readable inscriptions and three story pages.
+- Pip's gear quest, Sera's lantern quest, two hidden relics, supply caches and a replayable timed bell challenge.
+- Charging husks, shooting watchers, treasure mimics, moving hazards and a three-pattern Warden fight.
+- A darker Hollow with watching silhouettes and distortion; original adaptive music for Before, the Hollow, the Archive and the boss.
+- Quest guidance, journal, power explanations, touch controls, sound volume and reduced screen movement.
+- Saves remain on the current device. Earlier saves migrate with earned upgrades and Crossing completion preserved.
 
 ## Controls
 
-| Action | Keys |
+| Action | Key |
 | --- | --- |
-| Move | A / D or left / right arrows |
-| Jump / wall jump | Space or C |
-| Aim dash | WASD or arrow keys |
-| Dash | X or Shift |
-| Change timeline | Q |
-| Attack | J or Z |
-| Talk | E |
-| Upgrades | Tab or U |
+| Move | A / D or left / right |
+| Jump | W or up |
+| Climb | Hold W while pressing A/D into a wall |
+| Double jump | Release and press W again, after the first lantern |
+| Dash / aim | X or Shift, aimed with WASD |
+| Change realm | Q |
+| Sword combo | Hold J or Z |
+| Rift Bolt | K, after the second lantern |
+| Ward Pulse | L, after the third lantern |
+| Talk / read / restore / open | E |
+| Quest journal / lore / fast travel | F |
+| Upgrades | U or Tab |
 | Pause | Escape |
 | Return to checkpoint | R |
-| Toggle audio | M |
+| Sound | M |
 
-Collect the three Echo seals, defeat the Warden, and reach the gate. The Warden takes more damage when you attack from the timeline opposite its aura.
+Space is no longer the jump key. The first lantern unlocks Second Wind, the second unlocks Rift Bolt, and the third unlocks Ward Pulse. Finishing Ivo's story unlocks Echo Step.
 
 ## Development
 
-No runtime dependencies or external game assets. Serve `dist/` with any static HTTP server. For example, `python3 -m http.server 8000 --directory dist`, then open `http://localhost:8000`.
+Edit the **root source files**: world.js contains the levels and interactables; story.js contains quests and dialogue; engine.js handles gameplay; render.js draws the pixel art; app.js handles the interface; music.js creates the original soundtrack.
 
-Run `npm test` for gameplay tests or `npm run build` to verify all game files and tests. `vercel.json` configures a static Vercel deployment using `dist/` as the output directory.
+Run npm run build or npm test. The build copies root source files into dist/, checks every JavaScript module, and runs the gameplay tests. Do not edit generated copies in dist/.
 
-The base uses separate world data, a fixed-step physics engine, a canvas renderer, and a browser UI. Add future regions in `dist/world.js` and abilities in `dist/engine.js`.
+No runtime dependencies or downloaded game assets are required. For a local preview, run:
 
-This is the first playable foundation. There are no accounts, multiplayer, or cloud saves yet.
+    npm run build
+    python3 -m http.server 8000 --directory dist
 
-## Cloudflare Workers deployment
+Open http://localhost:8000. For Workers development, use npx wrangler dev.
 
-`wrangler.json` deploys the playable files in `dist/` as static assets to the
-existing `taco-rpg` Worker.
+## Cloudflare deployment
 
-In Cloudflare, open **Workers & Pages > taco-rpg > Settings > Build** and use:
+The existing taco-rpg Worker serves the game assets from dist/ through wrangler.json.
 
 | Setting | Value |
 | --- | --- |
-| Repository | `hoomanthatlikeschocolate-stack/taco-rpg` |
-| Production branch | `main` |
-| Root directory / path | `/` |
-| Build command | `npm run build` |
-| Deploy command | `npx wrangler deploy` |
-| Preview command | `npx wrangler versions upload` |
+| Repository | hoomanthatlikeschocolate-stack/taco-rpg |
+| Production branch | main |
+| Root directory | / |
+| Build command | npm run build |
+| Deploy command | npx wrangler deploy |
+| Preview command | npx wrangler versions upload |
 
-Save the settings and retry the latest build containing `wrangler.json`.
-The preview command uploads a version without changing the live game.
+Pushes to main deploy through the existing Cloudflare connection. The preview command uploads a version without changing production.
 
-For local Workers development, run `npx wrangler dev`.
+There are two playable areas in this release. More worlds can extend the journey beyond Ivo's story. There are no accounts, multiplayer or cloud saves.
