@@ -28,7 +28,7 @@ def make_request(environ, place):
     for name in ("ROBLOX_UNIVERSE_ID", "ROBLOX_PLACE_ID"):
         value = environ.get(name, "").strip()
         if not re.fullmatch(r"[1-9][0-9]{0,18}", value):
-            raise PublishingError(f"Set {name} to the selected game's numeric ID in GitHub Actions Variables.")
+            raise PublishingError(f"Set {name} to the selected game's numeric ID in the publishing workflow.")
         ids.append(value)
     key = environ.get("ROBLOX_API_KEY", "").strip()
     if not key or any(ord(char) < 33 or ord(char) > 126 for char in key):

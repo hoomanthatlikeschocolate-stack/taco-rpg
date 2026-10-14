@@ -2,7 +2,20 @@
 
 An existing empty Roblox experience can become this game. Uploading replaces the selected place's current contents. It does not change who can access the game.
 
-## Choose the destination
+## Selected destination
+
+The user selected this empty experience:
+
+| Setting | ID |
+| --- | --- |
+| Universe ID | 9448778605 |
+| Start Place ID | 106131587175306 |
+
+[Open the selected place](https://create.roblox.com/dashboard/creations/experiences/9448778605/places/106131587175306/permissions).
+
+Both IDs are already configured in the publishing workflow. GitHub Actions variables are not needed.
+
+To identify a different destination later:
 
 1. Open [Creator Dashboard](https://create.roblox.com/dashboard/creations).
 2. Choose an empty experience that you want to use for the sleeping game.
@@ -24,22 +37,15 @@ You can share that address in chat. IDs are not credentials. The existing experi
 
 Keep the key in GitHub Secrets. Do not paste it into chat, commit it into a file or put it in an Actions variable.
 
-## Configure the destination
+## Start publishing
 
-In [GitHub Actions variables](https://github.com/hoomanthatlikeschocolate-stack/taco-rpg/settings/variables/actions), add:
-
-| Variable name | Value |
-| --- | --- |
-| ROBLOX_UNIVERSE_ID | The chosen empty experience's Universe ID |
-| ROBLOX_PLACE_ID | That experience's start Place ID |
-
-With the key and both IDs configured, game changes pushed to main are rebuilt, checked and uploaded automatically. Code changes to the Roblox game trigger publishing; browser-prototype changes do not.
+With the key saved, game changes pushed to main are rebuilt, checked and uploaded automatically to the selected place. Code changes to the Roblox game trigger publishing; browser-prototype changes do not.
 
 For the first upload after configuring these values, open [GitHub Actions](https://github.com/hoomanthatlikeschocolate-stack/taco-rpg/actions), select Publish Roblox game, and click Run workflow on main. Adding settings by itself does not trigger an upload.
 
 ## What runs
 
-The workflow checks out the selected main commit, rebuilds Opening.rbxlx, runs the game geometry/progression checks and publisher tests, then sends the complete XML place to Roblox's Place Publishing API. A successful run reports the new version number. With either destination ID missing, it runs the checks and skips uploading.
+The workflow checks out the selected main commit, rebuilds Opening.rbxlx, runs the game geometry/progression checks and publisher tests, then sends the complete XML place to Roblox's Place Publishing API. A successful run reports the new version number. Without the publishing secret, it runs the checks and skips uploading.
 
 GitHub workflow source: .github/workflows/roblox-publish.yml.
 

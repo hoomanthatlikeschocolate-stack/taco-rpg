@@ -26,6 +26,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      ROBLOX_UNIVERSE_ID: '9448778605'
+      ROBLOX_PLACE_ID: '106131587175306'
     defaults:
       run:
         working-directory: roblox
@@ -41,14 +44,21 @@ jobs:
         run: python3 check_project.py
       - name: Check the publisher
         run: python3 -m unittest discover -s tests -p 'test_*.py'
-      - name: Destination not configured
-        if: vars.ROBLOX_UNIVERSE_ID == '' || vars.ROBLOX_PLACE_ID == ''
-        run: |
-          echo 'Build passed. No Roblox upload: choose the empty experience and configure both destination IDs.'
-      - name: Publish to the selected experience
-        if: vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
+      - name: Check publishing connection
+        id: connection
         env:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
-          ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
-          ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
+        run: |
+          python3 - <<'PY'
+          import os
+          ready = bool(os.environ.get("ROBLOX_API_KEY", "").strip())
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"ready={str(ready).lower()}\n")
+          if not ready:
+              print("Build passed. Add ROBLOX_API_KEY to repository Actions secrets to connect publishing.")
+          PY
+      - name: Publish to the selected experience
+        if: steps.connection.outputs.ready == 'true'
+        env:
+          ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
         run: python3 publish_place.py
