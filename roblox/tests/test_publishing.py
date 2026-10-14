@@ -67,6 +67,14 @@ class PublishingTests(unittest.TestCase):
         self.assertIn("403", str(error.exception))
         self.assertNotIn(secret, str(error.exception))
 
+    def test_json_diagnostic_reports_the_error_without_the_key(self):
+        key = self.env["ROBLOX_API_KEY"]
+        body = json.dumps({"errors": [{"code": 1, "message": "Invalid XML. " + key}]}).encode()
+        error = urllib.error.HTTPError("https://apis.roblox.com", 400, "Bad request", {}, io.BytesIO(body))
+        detail = p.error_detail(error, key)
+        self.assertIn("Invalid XML", detail)
+        self.assertNotIn(key, detail)
+
 
 if __name__ == "__main__":
     unittest.main()

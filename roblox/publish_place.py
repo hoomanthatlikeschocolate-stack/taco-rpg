@@ -23,6 +23,31 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def error_detail(error, secret):
+    """Read only bounded JSON diagnostic fields and redact credentials."""
+    try:
+        payload = error.read(8192).decode("utf-8", errors="replace")
+        if secret:
+            payload = payload.replace(secret, "[redacted]")
+        data = json.loads(payload)
+    except (OSError, ValueError):
+        return ""
+    messages = []
+    def pick(value):
+        if isinstance(value, str):
+            clean = re.sub(r"[A-Za-z0-9+/=_-]{40,}", "[redacted]", value)
+            messages.append(" ".join(clean.split())[:350])
+        elif isinstance(value, list):
+            for entry in value[:5]:
+                pick(entry)
+        elif isinstance(value, dict):
+            for key in ("code", "error", "message", "title", "errors"):
+                if key in value:
+                    pick(value[key])
+    pick(data)
+    return "; ".join(dict.fromkeys(messages))[:650]
+
+
 def make_request(environ, place):
     ids = []
     for name in ("ROBLOX_UNIVERSE_ID", "ROBLOX_PLACE_ID"):
@@ -59,6 +84,7 @@ def publish(environ=None, place=None, opener=None):
         with opener.open(request, timeout=120) as response:
             result = json.loads(response.read())
     except urllib.error.HTTPError as error:
+        detail = error_detail(error, environ.get("ROBLOX_API_KEY", "").strip())
         hints = {
             401: "Check that ROBLOX_API_KEY is active and has universe-places Write permission.",
             403: "The key needs permission to publish to this specific experience.",
@@ -66,6 +92,7 @@ def publish(environ=None, place=None, opener=None):
             429: "Roblox rate limited publishing. Run the workflow again later.",
         }
         raise PublishingError(f"Roblox returned HTTP {error.code}. " +
+            (detail + ". " if detail else "") +
             hints.get(error.code, "Publishing did not return success. Check Roblox and retry later.")) from None
     except (urllib.error.URLError, TimeoutError):
         raise PublishingError("Could not reach Roblox. Check version history before retrying.") from None
