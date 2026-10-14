@@ -3,7 +3,12 @@ from pathlib import Path
 import json, math, xml.etree.ElementTree as E
 
 ROOT = Path(__file__).resolve().parent
-root = E.Element('roblox', {'version': '4'})
+root = E.Element('roblox', {
+    'xmlns:xmime': 'http://www.w3.org/2005/05/xmlmime',
+    'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+    'xsi:noNamespaceSchemaLocation': 'http://www.roblox.com/roblox.xsd',
+    'version': '4',
+})
 E.SubElement(root, 'External').text = 'null'
 E.SubElement(root, 'External').text = 'nil'
 serial = 0
@@ -271,6 +276,7 @@ starter=item('StarterPlayer','StarterPlayer'); item('StarterPlayerScripts','Star
 item('StarterGui','StarterGui'); item('SoundService','SoundService')
 lighting=item('Lighting','Lighting'); prop(lighting,'float','ClockTime',.23); prop(lighting,'float','Brightness',1.4); prop(lighting,'float','ExposureCompensation',-.15); color(lighting,'Ambient',(38,42,64)); color(lighting,'OutdoorAmbient',(43,51,77)); color(lighting,'FogColor',(21,27,46)); prop(lighting,'float','FogStart',0); prop(lighting,'float','FogEnd',150); prop(lighting,'bool','GlobalShadows',True)
 # Compact XML keeps the Studio download small; editable source remains in src/.
-out=ROOT/'Opening.rbxlx'; E.ElementTree(root).write(out,encoding='utf-8',xml_declaration=True)
+# Roblox's native reader requires explicit closing tags, even for empty strings.
+out=ROOT/'Opening.rbxlx'; E.ElementTree(root).write(out,encoding='utf-8',xml_declaration=False,short_empty_elements=False)
 (ROOT/'map-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(f'Built {out.name}: {serial} instances, {len(manifest)} geometry parts, {out.stat().st_size:,} bytes.')

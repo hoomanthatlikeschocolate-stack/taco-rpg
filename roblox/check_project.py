@@ -1,7 +1,10 @@
 """Geometry, embedded-source, real state/driver and substituted-service server checks."""
 from pathlib import Path
-import ctypes, ctypes.util, math, xml.etree.ElementTree as E
+import ctypes, ctypes.util, math, re, xml.etree.ElementTree as E
 ROOT=Path(__file__).resolve().parent
+serialized=(ROOT/'Opening.rbxlx').read_bytes()
+assert serialized.startswith(b'<roblox '), 'Roblox XML must start with its root element'
+assert not re.search(rb'<[^<>]+/>',serialized), 'Use explicit closing tags for the Roblox XML reader'
 root=E.parse(ROOT/'Opening.rbxlx').getroot()
 assert root.tag=='roblox' and root.attrib['version']=='4'
 items=list(root.iter('Item')); refs={o.attrib['referent']:o for o in items}
