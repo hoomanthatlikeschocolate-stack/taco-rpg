@@ -1,12 +1,11 @@
 {
-  "name": "riftbound",
-  "version": "0.3.0",
+  "name": "new-project",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Riftbound \u2014 The Unremembering, a two-realm platformer RPG",
+  "description": "A fresh start for the next project",
   "scripts": {
-    "build": "node scripts/check.mjs",
-    "test": "node scripts/check.mjs"
+    "build": "node scripts/check.mjs"
   },
   "engines": {
     "node": ">=20"
