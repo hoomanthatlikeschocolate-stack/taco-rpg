@@ -69,7 +69,7 @@ room = item('Model', 'Bedroom', world); dream = item('Model', 'Dream', world); m
 # Bedroom: a complete, enclosed 36 x 30 room with furniture and a dark closet.
 part(room,'Floor',(36,1,30),(0,-.5,0),(57,51,61),'woodplanks')
 for i in range(16): part(room, 'FloorSeam'+str(i), (.025,.01,30), (-17+i*2.25,.015,0), (27,28,38), collide=False)
-for name,size,pos in [('BackWall',(36,12,1),(0,6,-15)),('LeftWall',(1,12,30),(-18,6,0)),('RightWall',(1,12,30),(18,6,0)),('FrontWall',(36,12,1),(0,6,15)),('Ceiling',(36,1,30),(0,12.5,0))]:
+for name,size,pos in [('BackWall',(36,12,1),(0,6,-15)),('LeftWall',(1,12,30),(-18,6,0)),('RightWall',(1,12,30),(18,6,0)),('FrontLeft',(14.5,12,1),(-10.75,6,15)),('FrontRight',(14.5,12,1),(10.75,6,15)),('DoorHeader',(7,3.5,1),(0,10.25,15)),('Ceiling',(36,1,30),(0,12.5,0))]:
     part(room,name,size,pos,(49,49,66),'concrete')
 for x in range(-15,17,3): part(room,'WallpaperStrip'+str(x),(.08,10.5,.06),(x,6,-14.46),(59,55,72),collide=False)
 for z in [-14.45,14.45]: part(room,'Skirting'+str(z),(35,.45,.12),(0,.35,z),(91,80,94),'wood',False)
@@ -81,8 +81,12 @@ part(room,'Headboard',(7.6,5,.55),(-7,2.5,-11.2),(106,86,105),'wood')
 for x in [-9.65,-4.35]:
     for z in [-10,.1]: part(room,'BedLeg',(.55,1.1,.55),(x,.6,z),(77,64,84),'wood')
 part(room,'Pillow',(3,.55,2.2),(-7,2.31,-8.5),(215,202,191),'fabric',False)
-part(room,'Blanket',(6.7,.28,6.5),(-7,2.26,-3.3),(91,108,138),'fabric',False)
-for x in [-9.4,-7.8,-6.2,-4.6]: part(room,'BlanketStripe',(.12,.035,6.3),(x,2.425,-3.3),(137,144,164),'fabric',False)
+part(room,'Blanket',(6.7,.16,2.8),(-7,2.35,-1.45),(91,108,138),'fabric',False)
+# Six attached cloth strips open at the far mattress edge BEFORE the actor enters.
+for i in range(6):
+    x=-10.35+(i+.5)*6.7/6
+    panel=part(room,'BlanketPanel'+str(i+1),(6.7/6+.025,.13,4),(x,2.35,-4.85),(91,108,138),'fabric',False)
+    part(room,'BlanketStripe'+str(i+1),(.08,.02,3.95),(x,2.43,-4.85),(137,144,164),'fabric',False)
 part(room,'Nightstand',(3,2.4,3),(-1.5,1.2,-6),(96,78,98),'wood')
 part(room,'Drawer',(2.65,.8,.08),(-1.5,1.65,-4.45),(116,94,116),'wood',False)
 part(room,'DrawerHandle',(.5,.12,.1),(-1.5,1.65,-4.36),(193,165,153),'metal',False)
@@ -214,10 +218,30 @@ for i,(pos,act,title) in enumerate([
     prompt_part('Interaction'+str(i),pos,act,title)
     memory=part(dream,'Memory'+str(i),(.55,.55,.55),(pos[0],12.8,pos[2]),(221,224,252),'neon',False,shape=0); light(memory,'MemoryGlow',(197,208,255),.55,14)
 prompt_part('HallwayReturn',(-38,11,-404),'Step through','The door behind you')
-prompt_part('ExitPrompt',(0,11,-446),'Wake up','The front door')
+prompt_part('ExitPrompt',(0,11,-446),'Listen','A door with no other side')
+# Additional gentle dream interactions; none advances the waking timer.
+part(dream,'Float_PhoneTable',(4,.35,3),(7,10.2,-245),(181,149,180),'wood',False)
+part(dream,'Float_Phone',(1.8,.5,1.1),(7,10.7,-245),(228,179,176),collide=False)
+part(dream,'Float_Receiver',(2.3,.22,.45),(7,11.12,-245),(216,151,162),collide=False)
+prompt_part('Interaction4',(7,11,-243),'Answer','A phone that remembers you')
+part(dream,'Float_Teacup',(4,3.5,4),(-20,10,-302),(224,197,176),'plastic',False,shape=2)
+for i in range(12):
+    q=i*math.pi/6
+    part(dream,'Float_TeaStar'+str(i),(.25,.25,.25),(-20+math.cos(q)*4,14+i%3,-302+math.sin(q)*4),(236,222,176),'neon',False,shape=0)
+prompt_part('Interaction5',(-18,11,-299),'Stir the sky','A cup full of stars')
+for i in range(18):
+    x=-7+i%6*2.8; z=-350-i//6*5
+    part(dream,'Float_Lantern'+str(i),(.7,1.05,.7),(x,16+i%4,z),(233,190+i%3*15,162),'neon',False)
+    for j in range(2): part(dream,'Float_Rain'+str(i*2+j),(.05,.45,.05),(x+3*j,9+i%7,z-j*2),(201,228,237),'neon',False)
+prompt_part('Interaction6',(1,11,-351),'Release a lantern','Make a wish')
+for x,z in [(-18,-242),(18,-287),(-5,-316)]:
+    part(dream,'Float_Book',(2.4,.12,1.7),(x,14,z),(240,215,187),'fabric',False,rotation=matrix(0,22,-15))
+    part(dream,'Float_BookWing',(2.4,.12,1.7),(x+2.2,14,z),(240,215,187),'fabric',False,rotation=matrix(0,22,15))
+from build_day import build_day
+build_day(globals())
 
 # Markers are invisible non-colliding helpers, editable in Studio.
-marker_defs={'RoomSpawn':((0,4,8),matrix()),'ActorStart':((5,3.18,7),matrix()),'ActorBedside':((-2.9,3.18,-4),matrix(0,-90,0)),'ActorSit':((-4.4,3.15,-4),matrix(0,-90,0)),'ActorSleep':((-7,2.68,-5.7),((-1,0,0),(0,0,-1),(0,-1,0))), 'IntroCamera':((12,7.8,12),matrix()),'WakeCamera':((-7,3.35,-7.65),matrix()),'EyeTarget':((11,5.65,-9.85),matrix()),'DreamSpawn':((0,12,-232),matrix()),'DreamExit':((0,12,-446),matrix()),'HallwaySpawn':((-38,12,-381),matrix()),'PortalReturn':((-12,12,-395),matrix())}
+marker_defs={'RoomSpawn':((0,4,8),matrix()),'ActorStart':((0,3.18,9),matrix()),'ActorWalk1':((0,3.18,3),matrix()),'ActorWalk2':((-1.25,3.18,.8),matrix(0,38,0)),'ActorBedside':((-1.25,3.18,-2.3),matrix(0,90,0)),'ActorSit':((-3.95,3.1,-2.2),matrix(0,-90,0)),'ActorSleep':((-7,2.85,-5.3),((-1,0,0),(0,0,-1),(0,-1,0))), 'IntroCamera':((12,7.8,12),matrix()),'WakeCamera':((-7,3.95,-7.6),matrix()),'EyeTarget':((11,5.65,-9.85),matrix()),'DreamSpawn':((0,12,-232),matrix()),'DreamExit':((0,12,-446),matrix()),'HallwaySpawn':((-38,12,-381),matrix()),'PortalReturn':((-12,12,-395),matrix())}
 for name,(pos,rot) in marker_defs.items(): part(markers,name,(.5,.5,.5),pos,(255,255,255),collide=False,transparency=1,rotation=rot)
 spawn=part(workspace,'SpawnLocation',(3,.2,3),(0,.15,8),(40,45,65),collide=False,transparency=1,class_name='SpawnLocation'); prop(spawn,'bool','Neutral',True); prop(spawn,'float','Duration',0)
 # Replicated local cinematic actor. His face is geometry, with no uploaded asset dependencies.
@@ -237,9 +261,13 @@ for name,size,pos,rgb,trans in body:
     if name=='Root': actor_root=obj
 prop(sleeper,'Ref','PrimaryPart',actor_root.attrib['referent'])
 remote_folder=item('Folder','OpeningRemotes',replicated); item('RemoteEvent','Action',remote_folder); item('RemoteEvent','Update',remote_folder)
-shared=item('Folder','OpeningShared',replicated); script(shared,'ModuleScript','Config','Config.lua'); script(shared,'ModuleScript','State','State.lua'); script(shared,'ModuleScript','Navigation','Navigation.lua'); script(shared,'ModuleScript','ActorAnimator','ActorAnimator.lua'); script(shared,'ModuleScript','Music','Music.lua')
+shared=item('Folder','OpeningShared',replicated)
+for name in ['Config','State','Navigation','Driving','ActorAnimator','Music']: script(shared,'ModuleScript',name,name+'.lua')
 server=item('ServerScriptService','ServerScriptService'); script(server,'Script','OpeningServer','OpeningServer.server.lua')
-starter=item('StarterPlayer','StarterPlayer'); starter_scripts=item('StarterPlayerScripts','StarterPlayerScripts',starter); script(starter_scripts,'LocalScript','OpeningClient','OpeningClient.client.lua')
+players=item('Players','Players'); prop(players,'bool','CharacterAutoLoads',False)
+# Main client also lives in ReplicatedFirst so Ready can spawn the avatar after UI exists.
+first=item('ReplicatedFirst','ReplicatedFirst'); script(first,'LocalScript','Loading','Loading.client.lua'); script(first,'LocalScript','OpeningClient','OpeningClient.client.lua')
+starter=item('StarterPlayer','StarterPlayer'); item('StarterPlayerScripts','StarterPlayerScripts',starter)
 item('StarterGui','StarterGui'); item('SoundService','SoundService')
 lighting=item('Lighting','Lighting'); prop(lighting,'float','ClockTime',.23); prop(lighting,'float','Brightness',1.4); prop(lighting,'float','ExposureCompensation',-.15); color(lighting,'Ambient',(38,42,64)); color(lighting,'OutdoorAmbient',(43,51,77)); color(lighting,'FogColor',(21,27,46)); prop(lighting,'float','FogStart',0); prop(lighting,'float','FogEnd',150); prop(lighting,'bool','GlobalShadows',True)
 # Compact XML keeps the Studio download small; editable source remains in src/.

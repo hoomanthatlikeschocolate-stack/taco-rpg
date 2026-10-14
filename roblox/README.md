@@ -1,64 +1,75 @@
-# Roblox dream opening — updated prototype
+# Roblox opening and first playable day
 
-The same unnamed opening, now built around surreal exploration rather than obstacle-course jumps.
+An unnamed native Roblox horror prototype. Download **Opening.rbxlx**, open it in **Roblox Studio → File → Open from File**, and press **Play**. All geometry, scripts, prompts, UI and configured music are embedded. No script pasting is needed.
 
-## Open and play
+Open this newly downloaded place to test the update. An older open Studio place does not automatically load changes from GitHub. Publishing to your existing Roblox experience is a separate action in Studio.
 
-Download **Opening.rbxlx**, open it in Roblox Studio with **File → Open from File**, and press **Play**. The map, prompts, camera sequence, animation modules and music are already inside. Open this updated file when testing; an older Studio place does not pull GitHub changes automatically.
+## What happens
 
-- WASD / native touch controls: walk and explore.
-- Mouse / native camera controls: look around.
-- E / gamepad X / native touch prompt: interact with dream objects and doors.
-- R / gamepad Y / Return to path touch button: return safely to the last reached checkpoint.
-- M: music on/off. V: full/reduced effects.
-- Space remains Roblox's normal jump control, but **the entire route is walkable without jumping**.
+1. A black loading cover and a client-ready spawning handshake prevent the player's account avatar from appearing before the cinematic.
+2. The character walks around the furniture, lifts a hinged section of the blanket, gets underneath it, settles the blanket over his body and falls asleep. The camera moves toward his head.
+3. You explore a dream with a continuous walkable floor, floating furniture and books, backwards clocks, rising rain, paper fish, a phone, a cup full of stars and lanterns. Six objects can be interacted with; a small door opens into an impossible hallway.
+4. **Nothing glitches or corrupts during the first 45 seconds**, regardless of exploration or interactions. Distortion then builds gradually. At **90 seconds**, the dream wakes you automatically. Doors never control waking.
+5. The bedroom is darker. Red eyes appear in the closet, then disappear. After the glow fades, E turns on the lamp and the character gets out of bed.
+6. Walk to the couch and watch the news. A fictional report describes two unexplained overnight deaths. It is presented on the TV and in timed subtitles.
+7. The character says, “I should probably eat some breakfast.” Take bread from the fridge, use the toaster, wait for it to pop and eat.
+8. Get into the car, drive along the road to work, slow down and park. Walk into the fast-food restaurant.
+9. Take three different orders, prepare the requested burgers, fries and drinks, and serve them. Wipe the counter and empty the trash to finish the shift. A coworker can be spoken to.
+10. Drive home, enter the house and go to bed again. The prototype finishes at the second bedtime and offers replay.
 
-## Dream changes
+An objective and a small glowing marker guide each daytime task. Actions are validated on the server and cannot skip the news, toast timer, orders or cleanup.
 
-A continuous shallow dream sea connects the whole map. Follow the pale path past a floating bed, backwards clocks, hovering paper fish, suspended furniture, an enormous door, an inverted bedroom and a staircase leading nowhere. Touch familiar objects for contextual dialogue. A little door leads to a hallway that cannot fit behind it; leaving the hallway returns you somewhere else. The real front door ends the dream.
+## Controls
 
-The floor, route lights and personal safety light stay readable as scenery distorts. Color, fog, prop movement and music change gradually. Full darkness happens after reaching the exit, during the cinematic blackout, rather than while navigating. An idle timeout eventually advances the story after four minutes.
+| Action | Keyboard | Other input |
+| --- | --- | --- |
+| Walk / explore | WASD | Native Roblox touch controls or gamepad |
+| Interact | E | Gamepad X or native touch prompt |
+| Jump | Space | Native Roblox jump control; the dream needs no jumps |
+| Recover in dream | R | Gamepad Y or Return to path button |
+| Drive | W accelerate, S brake/reverse, A/D steer | Touch driving pad or gamepad left stick |
+| Park at destination | E, after slowing down | Gamepad X or Park button |
+| Music | M or Music button | Music button |
+| Reduced effects | V or Effects button | Effects button |
 
-## Bedtime sequence
-
-The local cinematic actor now has segmented legs and arms. He walks with bent knees and counter-swinging arms, turns at the bed, sits, reaches for the lamp, turns it off, lies back, pulls up the blanket, closes his eyes and breathes. The camera follows his face into the dream.
-
-After the dream, you return to the same room and the same clock time. Red eyes appear in the closet. The bedside lamp fails. Replay becomes available after the reveal.
-
-## Falling and reset fixes
-
-- Main ground is continuous, with invisible edge barriers and a backup safety floor.
-- Checkpoints and portal destinations are inside the solid floor.
-- Ground recovery uses a server raycast, avatar-aware R6/R15 clearance, zero linear/angular velocity, a short anchored stabilization, and a brief client control reset.
-- Recovery retains memories, corruption and the furthest checkpoint.
-- Ready/status queries send a snapshot and **never teleport the player**. This prevents respawn queries from overriding checkpoint recovery.
-- R and the touch return button provide a manual escape if the character gets stuck.
-
-## Music
-
-Real Creator Store / APM asset IDs are configured, with quiet bedroom music, an ambient dream theme, a pitched-down dread layer, reverb, gradual filtering, crossfades and an awakening sting. M or the Music button mutes it. See **AUDIO-CREDITS.md** for asset links and availability notes. Audio loads asynchronously and never blocks the opening.
+Cars use server-owned arcade movement on a continuous bounded road. Releasing the controls brakes; stale input also brakes. Parking requires reaching the destination at low speed.
 
 ## Editing
 
-Expand **Workspace → OpeningWorld** to edit Bedroom, Dream and Markers. The solid floor and boundaries are in **Dream → Walkable**. Keep marker names intact. The actor template is in **ReplicatedStorage → OpeningAssets → Sleeper**.
+- Workspace → OpeningWorld → Bedroom: bed, cloth panels, closet, couch and TV.
+- OpeningWorld → Dream: surreal objects, prompts and solid Walkable floor.
+- OpeningWorld → Day: Kitchen, Street, Restaurant, cars and daytime interactions.
+- OpeningWorld → Markers: choreography, spawn, recovery and parking locations.
+- ReplicatedStorage → OpeningAssets → Sleeper: the segmented cinematic character.
+- ReplicatedStorage → OpeningShared: Config, State, Navigation, Driving, ActorAnimator and Music.
+- ReplicatedFirst: Loading and OpeningClient LocalScripts. The main client starts here so it can request avatar spawning only after its UI and event receivers exist.
+- ServerScriptService: OpeningServer.
 
-The prebuilt place contains all scripts:
-
-- Config, State, Navigation, ActorAnimator and Music: ModuleScripts in ReplicatedStorage/OpeningShared.
-- OpeningServer.server.lua: Script in ServerScriptService.
-- OpeningClient.client.lua: LocalScript in StarterPlayer/StarterPlayerScripts.
-
-Edit their corresponding files in **src/**. Rebuild and validate with:
+The corresponding editable sources are in **src/**. Rebuild owned geometry and embedded scripts with:
 
     python3 build_place.py
     python3 check_project.py
 
-Rebuilding regenerates modeled geometry, so export Studio edits before rebuilding if you want to keep them.
+The generator uses **build_day.py** for the house extension and workday. Rebuilding replaces generated geometry; export Studio changes before rebuilding to preserve hand edits.
+
+Config owns the 45-second delay, 90-second waking timer, report text, order recipes, audio IDs and car tuning. Story state is kept per player for the running session. This prototype does not yet persist progress between sessions.
+
+## Recovery and visibility
+
+The dream floor has no platform gaps. Edge barriers, a backup floor, checkpoints, ground raycasts, avatar-aware clearance, velocity clearing and brief stabilization prevent endless falling. R returns to the furthest reached checkpoint without losing interactions or resetting the dream timer. Daytime falling returns to a safe location while retaining quest progress.
+
+The floor, path lights and local safety light stay readable during corruption. Full black occurs during the waking transition. Reduced effects and music controls are available throughout.
+
+## Audio
+
+Configured Creator Store / APM tracks provide bedroom music, a dream theme, a dread layer, an awakening sting and quiet daytime background music. The TV report uses text and subtitles; it has no uploaded voice recording. See **AUDIO-CREDITS.md**. Asset playback depends on Roblox availability and experience permissions.
 
 ## Validation
 
-The XML, references, transforms, embedded source and seven scripts were checked. Every segment of the walking route and every recovery/portal marker is checked against the solid floor. Executed tests cover phase flow, corruption limits, R6/R15 clearance, memory retention, actual server recovery, velocity clearing, manual return and Ready queries that cannot teleport.
+The generated XML, references, transforms and embedded sources pass checks. All nine Lua-compatible scripts compile. Geometry checks cover the cinematic walking route, dream recovery points, connected house/street ground and parking areas.
 
-**Roblox Studio is unavailable here**, so native rendering, the new body animation and audio playback still need a Studio playtest. This file has not been published to your Roblox account.
+Executed tests cover the strict quiet period, automatic waking, disappearing-eye/lamp timing, breakfast, every order, cleanup, both drives and second bedtime. The actual server script is run with service substitutes to exercise the loading handshake, checkpoint recovery, velocity clearing, invalid quest actions and a complete playthrough.
 
-Official references: [place files](https://create.roblox.com/docs/projects/place-files), [camera control](https://create.roblox.com/docs/workspace/camera), [audio](https://create.roblox.com/docs/audio).
+**Roblox Studio is unavailable in this environment.** Native rendering, bed animation, device controls and audio still need a Studio playtest. This place has not been published to a Roblox account.
+
+Official references: [loading screens](https://create.roblox.com/docs/players/loading-screens), [character spawning](https://create.roblox.com/docs/reference/engine/classes/Players), [camera control](https://create.roblox.com/docs/workspace/camera), [audio](https://create.roblox.com/docs/audio).

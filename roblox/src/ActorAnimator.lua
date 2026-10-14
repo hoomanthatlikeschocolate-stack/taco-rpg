@@ -20,7 +20,8 @@ function Animator:apply(pivot, time, pose)
     local body = root * CFrame.Angles((pose.lean or 0) * .16, 0, 0)
     p.Torso.CFrame = body * self.offsets.Torso
     local breath = sleep * math.sin(time * 1.6) * .015
-    local head = body * self.offsets.Head * CFrame.new(0,breath,0) * CFrame.Angles(0,(pose.look or 0)*.12,0)
+    -- Raise the back of the sleeping head onto the pillow rather than through it.
+    local head = body * self.offsets.Head * CFrame.new(0,breath,-sleep*.32) * CFrame.Angles(0,(pose.look or 0)*.12,0)
     p.Head.CFrame = head
     for _, name in ipairs({"Hair","FaceEyeL","FaceEyeR","Mouth"}) do
         p[name].CFrame = head * self.offsets.Head:Inverse() * self.offsets[name]

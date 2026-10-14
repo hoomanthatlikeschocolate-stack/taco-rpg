@@ -1,21 +1,19 @@
-# Playable opening
+# Roblox horror prototype
 
-An unnamed game prototype. The character walks to bed, falls asleep, and the camera moves into his head. The player explores a peaceful dream. Distance and time gradually corrupt the scenery, distort the soundtrack, and turn the world black. After a blackout, the same bedroom returns. Red eyes appear in its open closet.
+The current game is an **unnamed native Roblox game**. Its editable scripts, generated map and self-contained Studio place are in [roblox/](roblox/).
 
-## Controls
+Download [Opening.rbxlx](roblox/Opening.rbxlx), open it in **Roblox Studio → File → Open from File**, and press **Play**. All code is already embedded.
 
-- A/D or left/right: move in the dream; look around after waking.
-- W or up: jump. Hold for a higher jump.
-- X or Shift: dash; land to recharge.
-- E: enter the dream's exit door or try the bedside lamp after waking.
-- Escape: pause.
+The latest version includes the corrected bed choreography, an interactive dream that stays peaceful for 45 seconds and wakes you automatically at 90 seconds, the dark-bedroom reveal, a morning news report, breakfast, driving to a fast-food shift, three customer orders, cleanup, driving home and going to sleep again.
 
-Touch buttons are available on touch devices. Sound begins after pressing Go to sleep. Sound and reduced effects settings persist locally. The opening can be replayed after the final scene; no game name is assigned.
+See [the Roblox instructions](roblox/README.md) for controls, editing and validation. Open the updated place file to receive changes; GitHub does not synchronize an already-open Studio place automatically.
 
-## Development
+## Source and checks
 
-Edit root source files. Run `npm run build` or `npm test` to regenerate `dist/`, check JavaScript syntax, and run the opening tests. For a local preview, run `python3 -m http.server 8000 --directory dist` after building.
+    cd roblox
+    python3 build_place.py
+    python3 check_project.py
 
-`engine.js` owns sequence timing and dream physics. `render.js` draws the pixel scenes and distortion. `audio.js` synthesizes the soundscape. `app.js` manages input, overlays and the animation loop.
+The checks validate generated geometry, embedded scripts, state progression, both drives and actual server code using service substitutes. A Roblox Studio playtest is still required for engine rendering, animations, device controls and audio.
 
-The existing Cloudflare Worker serves `dist/`. Pushes to main deploy through the existing connection; the deploy command remains `npx wrangler deploy`.
+The older browser prototype remains in the repository root and uses the existing Cloudflare Worker deployment. The current native Roblox game is in **roblox/**.

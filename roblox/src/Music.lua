@@ -25,8 +25,12 @@ function Music:setPhase(phase)
 end
 function Music:update(dt,corruption)
     self.corruption=corruption
-    local dream=self.phase=="dream"; local room=self.phase=="ready" or self.phase=="bedtime"
-    local volumes={Room=room and .12 or 0,Dream=dream and .24 or 0,Drone=(dream and math.max(0,corruption-.28)*.16) or (self.phase=="awake" and .075 or 0)}
+    local dream=self.phase=="dream"
+    local room=self.phase=="ready" or self.phase=="bedtime" or self.phase=="secondBedtime"
+    local day=self.phase=="morning" or self.phase=="breakfast" or self.phase=="leave" or self.phase=="driveWork"
+        or self.phase=="work" or self.phase=="cleanup" or self.phase=="return" or self.phase=="driveHome" or self.phase=="home"
+    local volumes={Room=room and .12 or day and .055 or 0,Dream=dream and .24 or 0,
+        Drone=(dream and math.max(0,corruption-.28)*.16) or (self.phase=="awake" and .075 or 0)}
     for name,target in pairs(volumes) do
         local s=self.sounds[name]; local desired=self.enabled and target or 0
         s.Volume=s.Volume+(desired-s.Volume)*math.min(1,dt*1.4)
