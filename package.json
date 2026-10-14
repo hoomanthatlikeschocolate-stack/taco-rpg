@@ -1,13 +1,12 @@
 {
-  "name": "new-project",
-  "version": "0.0.0",
+  "name": "opening-prototype",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "A fresh start for the next project",
+  "description": "An unnamed playable dream horror opening",
   "scripts": {
-    "build": "node scripts/check.mjs"
+    "build": "node scripts/check.mjs",
+    "test": "node scripts/check.mjs"
   },
-  "engines": {
-    "node": ">=20"
-  }
+  "engines": { "node": ">=20" }
 }

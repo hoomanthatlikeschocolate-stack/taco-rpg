@@ -1,19 +1,26 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#10131a">
-  <meta name="description" content="A new project is coming soon.">
-  <title>New project</title>
-  <style>
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100svh;display:grid;place-items:center;padding:28px;background:#10131a;color:#edf0f6;font:16px/1.6 system-ui,sans-serif}
-    main{max-width:560px;text-align:center}
-    span{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#a8b3c7}
-    h1{font-size:clamp(32px,7vw,56px);line-height:1.1;letter-spacing:-.04em;margin:18px 0}
-    p{color:#a8b3c7;margin:0}
-  </style>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#080a10"><meta name="description" content="A playable opening. Go to sleep. Explore a dream. Wake up.">
+  <title>Opening</title><link rel="stylesheet" href="./style.css">
 </head>
-<body><main><span>A fresh start</span><h1>New idea. Coming soon.</h1><p>We're starting something new.</p></main></body>
+<body>
+  <main class="shell">
+    <header><span class="chapter">A PLAYABLE OPENING</span><div class="settings"><button id="motion" aria-pressed="false">Effects: full</button><button id="sound" aria-pressed="true">Sound: on</button><button id="pause" disabled>Pause</button></div></header>
+    <section class="stage" id="stage" aria-label="Game opening">
+      <canvas id="game" width="640" height="360" tabindex="0" aria-label="Playable dream horror opening. A and D move, W jumps, X dashes, E interacts, Escape pauses."></canvas>
+      <div class="scene-label" id="scene-label">BEDROOM <span>00:14</span></div>
+      <div class="subtitle" id="subtitle" role="status" aria-live="polite"></div>
+      <div class="prompt" id="prompt" hidden></div>
+      <section class="overlay" id="start-screen">
+        <div class="intro"><span class="eyebrow">THE HOUSE IS QUIET.</span><h1>It's late.</h1><p>One more night. One more dream.</p><button id="begin" class="primary">Go to sleep <span>→</span></button><small>Sound recommended · W jumps in the dream</small></div>
+      </section>
+      <section class="overlay paused" id="pause-screen" hidden><div class="intro"><span class="eyebrow">HOLD THAT THOUGHT.</span><h2>Paused</h2><button id="resume" class="primary">Return</button><button id="restart">Start again</button></div></section>
+      <div id="touch" class="touch" hidden><div><button data-input="left" aria-label="Move left">←</button><button data-input="right" aria-label="Move right">→</button></div><div><button data-input="interact" aria-label="Interact">E</button><button data-input="dash" aria-label="Dash">X</button><button data-input="jump" aria-label="Jump">W</button></div></div>
+    </section>
+    <footer><span id="controls">Begin when you're ready.</span><button id="replay" hidden>Replay opening ↻</button><span class="footer-note" id="footer-note">HEADPHONES / LIGHTS LOW</span></footer>
+  </main>
+  <noscript>This opening needs JavaScript enabled.</noscript><script type="module" src="./app.js"></script>
+</body>
 </html>
