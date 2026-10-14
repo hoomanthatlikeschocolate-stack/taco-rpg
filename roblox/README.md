@@ -2,7 +2,7 @@
 
 An unnamed native Roblox horror prototype. Download **Opening.rbxlx**, open it in **Roblox Studio → File → Open from File**, and press **Play**. All geometry, scripts, prompts, UI and configured music are embedded. No script pasting is needed.
 
-Open this newly downloaded place to test the update. An older open Studio place does not automatically load changes from GitHub. Publishing to your existing Roblox experience is a separate action in Studio.
+Open this newly downloaded place to test the update. An older open Studio place does not automatically load changes from GitHub. For browser-only updates to an existing empty Roblox experience, see [Chromebook publishing](PUBLISHING.md). Studio publishing remains available.
 
 ## What happens
 

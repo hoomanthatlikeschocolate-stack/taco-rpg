@@ -1,0 +1,54 @@
+name: Publish Roblox game
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'roblox/src/**'
+      - 'roblox/tests/**'
+      - 'roblox/build_place.py'
+      - 'roblox/build_day.py'
+      - 'roblox/check_project.py'
+      - 'roblox/publish_place.py'
+      - 'roblox/Opening.rbxlx'
+      - '.github/workflows/roblox-publish.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: roblox-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: roblox
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install Lua checker
+        run: sudo apt-get update -qq && sudo apt-get install -y liblua5.4-0
+      - name: Build the complete Roblox place
+        run: python3 build_place.py
+      - name: Validate geometry and story progression
+        run: python3 check_project.py
+      - name: Check the publisher
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - name: Destination not configured
+        if: vars.ROBLOX_UNIVERSE_ID == '' || vars.ROBLOX_PLACE_ID == ''
+        run: |
+          echo 'Build passed. No Roblox upload: choose the empty experience and configure both destination IDs.'
+      - name: Publish to the selected experience
+        if: vars.ROBLOX_UNIVERSE_ID != '' && vars.ROBLOX_PLACE_ID != ''
+        env:
+          ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
+          ROBLOX_UNIVERSE_ID: ${{ vars.ROBLOX_UNIVERSE_ID }}
+          ROBLOX_PLACE_ID: ${{ vars.ROBLOX_PLACE_ID }}
+        run: python3 publish_place.py
