@@ -15,6 +15,8 @@ The user selected this empty experience:
 
 Both IDs are already configured in the publishing workflow. GitHub Actions variables are not needed.
 
+Publishing is connected and the full place has been accepted by Roblox. [Open the game](https://www.roblox.com/games/106131587175306/). The workflow uploads content without changing audience/access settings.
+
 To identify a different destination later:
 
 1. Open [Creator Dashboard](https://create.roblox.com/dashboard/creations).

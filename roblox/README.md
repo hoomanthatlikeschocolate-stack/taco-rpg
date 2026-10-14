@@ -70,6 +70,6 @@ The generated XML, references, transforms and embedded sources pass checks. All 
 
 Executed tests cover the strict quiet period, automatic waking, disappearing-eye/lamp timing, breakfast, every order, cleanup, both drives and second bedtime. The actual server script is run with service substitutes to exercise the loading handshake, checkpoint recovery, velocity clearing, invalid quest actions and a complete playthrough.
 
-**Roblox Studio is unavailable in this environment.** Native rendering, bed animation, device controls and audio still need a Studio playtest. This place has not been published to a Roblox account.
+**Roblox Studio is unavailable in this environment.** Native rendering, bed animation, device controls and audio still need a Roblox playtest. The complete place has been uploaded successfully through Open Cloud to the selected [Roblox game](https://www.roblox.com/games/106131587175306/). Future game changes on main publish through the configured GitHub workflow.
 
 Official references: [loading screens](https://create.roblox.com/docs/players/loading-screens), [character spawning](https://create.roblox.com/docs/reference/engine/classes/Players), [camera control](https://create.roblox.com/docs/workspace/camera), [audio](https://create.roblox.com/docs/audio).
