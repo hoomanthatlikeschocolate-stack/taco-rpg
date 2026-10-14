@@ -8,6 +8,8 @@ local SoundService = game:GetService("SoundService")
 local player = Players.LocalPlayer
 local shared = ReplicatedStorage:WaitForChild("OpeningShared")
 local Config = require(shared:WaitForChild("Config"))
+local Animator = require(shared:WaitForChild("ActorAnimator"))
+local Music = require(shared:WaitForChild("Music"))
 local remotes = ReplicatedStorage:WaitForChild("OpeningRemotes")
 local action, update = remotes:WaitForChild("Action"), remotes:WaitForChild("Update")
 local map = workspace:WaitForChild("OpeningWorld")
@@ -23,6 +25,8 @@ if ok then controls = result end
 local phase, phaseAt, generation = "loading", os.clock(), 0
 local corruption, targetCorruption, reduced = 0, 0, false
 local actor, actorPivot, walking = nil, nil, false
+local actorAnimator=nil; local poseValues={}; local recoveryToken=0
+local music=Music.new(Config); local cameraLight=nil
 local captionUntil, lastBand, focusPoint = 0, 0, Vector3.new(-5, 3, -5)
 local tweens, decor, platformColors, memoryCollected, actorOffsets = {}, {}, {}, {}, {}
 local function clamp(v, lo, hi) return math.max(lo, math.min(hi, v)) end
@@ -59,19 +63,31 @@ for _, item in ipairs(dream:GetDescendants()) do
         if string.sub(item.Name, 1, 8) == "Platform" then platformColors[item] = item.Color end
     end
 end
-local soundObjects = {}
-for name, id in pairs(Config.Sounds) do
-    if id ~= "" then soundObjects[name] = create("Sound", SoundService, { Name = "Opening_" .. name, SoundId = id, Volume = 0, Looped = name ~= "Wake" }) end
+local function sound(name,volume)
+    music:setPhase(phase)
 end
-local function sound(name, volume)
-    for key, item in pairs(soundObjects) do
-        if key == name then if not item.IsPlaying then item:Play() end; item.Volume = volume or .3
-        else item.Volume = 0; if key ~= "Wake" then item:Stop() end end
-    end
+local musicButton=create("TextButton",gui,{AnchorPoint=Vector2.new(1,0),Position=UDim2.fromScale(.97,.09),Size=UDim2.fromOffset(136,30),Text="Music: on [M]",BackgroundColor3=Color3.fromRGB(16,20,30),BackgroundTransparency=.3,TextColor3=Color3.fromRGB(175,185,206),TextSize=12,Font=Enum.Font.Gotham,BorderSizePixel=0,ZIndex=35})
+local function toggleMusic()
+    music:setEnabled(not music.enabled); musicButton.Text=music.enabled and "Music: on [M]" or "Music: off [M]"
 end
+musicButton.Activated:Connect(toggleMusic)
+local blanketBase=room:WaitForChild("Blanket").CFrame
+local stripes={}
+for _,part in ipairs(room:GetChildren()) do if part.Name=="BlanketStripe" then stripes[part]=part.CFrame end end
+for _,name in ipairs({"walk","sit","lean","look","reach","sleep","eyes"}) do poseValues[name]=create("NumberValue",nil,{Name=name,Value=0}) end
 local function tween(item, duration, properties)
     local tw = TweenService:Create(item, TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), properties)
     table.insert(tweens, tw); tw:Play(); return tw
+end
+local function pose(duration,values)
+    for name,value in pairs(values) do tween(poseValues[name],duration,{Value=value}) end
+end
+local function safetyLight(enabled)
+    local char=player.Character; local root=char and char:FindFirstChild("HumanoidRootPart")
+    if root and enabled then
+        cameraLight=root:FindFirstChild("DreamSafetyLight") or create("PointLight",root,{Name="DreamSafetyLight",Color=Color3.fromRGB(204,220,255),Brightness=.85,Range=34,Shadows=false})
+        cameraLight.Enabled=true
+    elseif cameraLight and cameraLight.Parent then cameraLight.Enabled=false end
 end
 local function cancelTweens()
     for _, tw in ipairs(tweens) do tw:Cancel() end; tweens = {}
@@ -93,7 +109,10 @@ local function resetWorld()
     Lighting.ClockTime = .23; Lighting.Brightness = 1.4; Lighting.Ambient = Color3.fromRGB(38, 42, 64)
     Lighting.OutdoorAmbient = Color3.fromRGB(43, 51, 77); Lighting.FogColor = Color3.fromRGB(21, 27, 46); Lighting.FogStart = 0; Lighting.FogEnd = 150
     atmosphere.Density = .18; atmosphere.Color = Color3.fromRGB(139, 158, 192); atmosphere.Decay = Color3.fromRGB(61, 69, 101)
-    roomLamp.Brightness = 1.7; memoryCollected = {}; corruption = 0; targetCorruption = 0; lastBand = 0
+    roomLamp.Brightness = 1.7; room.Blanket.CFrame=blanketBase
+    for part,cf in pairs(stripes) do part.CFrame=cf end
+    for _,value in pairs(poseValues) do value.Value=0 end
+    memoryCollected = {}; corruption = 0; targetCorruption = 0; lastBand = 0
     for part, data in pairs(decor) do part.CFrame = data.cf; part.Color = data.color; part.Transparency = 0 end
     for part, color in pairs(platformColors) do part.Color = color end
     for i = 1, 3 do local item = dream:FindFirstChild("Memory" .. i); if item then item.Transparency = 0; local light = item:FindFirstChildOfClass("PointLight"); if light then light.Enabled = true end end end
@@ -103,6 +122,7 @@ local function spawnActor()
     if actor then actor:Destroy() end
     actor = actorTemplate:Clone(); actor.Name = "LocalSleeper"; actor.Parent = workspace
     actor.PrimaryPart = actor:FindFirstChild("Root"); actor:PivotTo(markers.ActorStart.CFrame)
+    actorAnimator=Animator.new(actor)
     actorOffsets = {}
     for _, item in ipairs(actor:GetDescendants()) do if item:IsA("BasePart") then actorOffsets[item] = actor:GetPivot():ToObjectSpace(item.CFrame) end end
 end
@@ -120,27 +140,37 @@ local function bedroomCamera()
     camera.CFrame = CFrame.lookAt(markers.IntroCamera.Position, Vector3.new(-5, 3.4, -5.5)); focusPoint = Vector3.new(-5, 3.4, -5.5)
 end
 local function bedtime(token)
-    spawnActor(); resetWorld(); hideCharacter(true); control(false); bedroomCamera(); menu.Visible = false; replay.Visible = false
-    fade.BackgroundTransparency = 1; label.Text = "BEDROOM / 00:14"; hint.Text = "Let yourself fall asleep."; caption.Text = ""; sound("Room", .24)
-    walking = true
-    if not moveActor(markers.ActorBedside.CFrame, 4.2, token) then return end
-    walking = false
-    if not moveActor(markers.ActorSit.CFrame, .9, token) then return end
-    if not moveActor(markers.ActorSleep.CFrame, 1.1, token) then return end
-    for _, name in ipairs({ "FaceEyeL", "FaceEyeR" }) do local eye = actor:FindFirstChild(name); if eye then eye.Size = Vector3.new(.13, .035, .055) end end
-    tween(roomLamp, 1, { Brightness = 0 }); task.wait(1.3); if token ~= generation then return end
-    local head = actor:FindFirstChild("Head"); if not head then return end
-    focusPoint = head.Position
-    tween(camera, 1.1, { CFrame = CFrame.lookAt(head.Position + Vector3.new(1.8, 4.5, 4.8), head.Position), FieldOfView = 53 }).Completed:Wait()
-    if token ~= generation then return end
-    tween(camera, 3.4, { CFrame = CFrame.lookAt(head.Position + Vector3.new(.01, .19, .05), head.Position), FieldOfView = 38 })
-    task.wait(2.6); if token ~= generation then return end
-    tween(fade, .8, { BackgroundTransparency = 0 }); tween(blur, .8, { Size = reduced and 0 or 10 }); task.wait(.9)
-    if token == generation then action:FireServer("EnterDream") end
+    spawnActor(); resetWorld(); hideCharacter(true); control(false); safetyLight(false); bedroomCamera(); menu.Visible=false; replay.Visible=false
+    fade.BackgroundTransparency=1; label.Text="BEDROOM / 00:14"; hint.Text=""; caption.Text=""; sound("Room",.12)
+    poseValues.walk.Value=1; poseValues.look.Value=-.4; walking=true
+    local stop=markers.ActorBedside.CFrame*CFrame.Angles(0,math.pi,0)
+    if not moveActor(stop,3.5,token) then return end
+    walking=false; pose(.35,{walk=0,look=0})
+    if not moveActor(markers.ActorBedside.CFrame,.55,token) then return end
+    pose(.9,{sit=1,lean=.15})
+    if not moveActor(markers.ActorSit.CFrame,.9,token) then return end
+    pose(.85,{reach=1,look=.4}); task.wait(.9); if token~=generation then return end
+    tween(roomLamp,.4,{Brightness=0}); task.wait(.45); if token~=generation then return end
+    pose(.6,{reach=0,lean=.25,look=0}); task.wait(.6); if token~=generation then return end
+    pose(1.6,{sit=0,lean=0,sleep=1})
+    if not moveActor(markers.ActorSleep.CFrame,1.6,token) then return end
+    local sheetTarget=blanketBase*CFrame.new(0,1,-.8)
+    tween(room.Blanket,1,{CFrame=sheetTarget})
+    for part,cf in pairs(stripes) do tween(part,1,{CFrame=cf*CFrame.new(0,1,-.8)}) end
+    pose(1,{eyes=1}); task.wait(1.25); if token~=generation then return end
+    local head=actor:FindFirstChild("Head"); if not head then return end
+    focusPoint=head.Position
+    tween(camera,1.2,{CFrame=CFrame.lookAt(head.Position+Vector3.new(1.5,4.3,4.2),head.Position),FieldOfView=52}).Completed:Wait()
+    if token~=generation then return end
+    tween(camera,3.4,{CFrame=CFrame.lookAt(head.Position+Vector3.new(.01,.22,.05),head.Position),FieldOfView=38})
+    task.wait(2.6); if token~=generation then return end
+    tween(fade,.8,{BackgroundTransparency=0}); tween(blur,.8,{Size=reduced and 0 or 7}); task.wait(.9)
+    if token==generation then action:FireServer("EnterDream") end
 end
 local function change(nextPhase)
     if nextPhase == "complete" then replay.Visible = true; hint.Text = "Move the mouse to look. E: bedside lamp."; return end
     generation = generation + 1; local token = generation; cancelTweens(); phase = nextPhase; phaseAt = os.clock(); walking = false
+    music:setPhase(nextPhase); safetyLight(nextPhase=="dream")
     if nextPhase == "ready" then
         resetWorld(); spawnActor(); hideCharacter(true); control(false); bedroomCamera(); menu.Visible = true; replay.Visible = false
         player.CameraMode = Enum.CameraMode.Classic; fade.BackgroundTransparency = 1; caption.Text = ""; hint.Text = ""; label.Text = "BEDROOM / 00:14"
@@ -149,15 +179,15 @@ local function change(nextPhase)
         if actor then actor:Destroy(); actor = nil end
         hideCharacter(false); control(true); player.CameraMode = Enum.CameraMode.LockFirstPerson
         local char = player.Character; if char then camera.CameraSubject = char:WaitForChild("Humanoid") end
-        camera.CameraType = Enum.CameraType.Custom; camera.FieldOfView = 75; blur.Size = 0
-        menu.Visible = false; replay.Visible = false; label.Text = "DREAM / FOLLOW THE LIGHTS"
-        hint.Text = UserInputService.TouchEnabled and "Explore the dream. Follow the lights." or "WASD: move   SPACE: jump   E: open the distant door"
+        camera.CameraType = Enum.CameraType.Custom; camera.FieldOfView = 72; blur.Size = 0
+        menu.Visible = false; replay.Visible = false; label.Text = "DREAM / FIND YOUR WAY HOME"
+        hint.Text = UserInputService.TouchEnabled and "Walk the pale path. Touch the things you remember." or "WASD: walk   E: interact   R: return to path   M: music"
         text("It feels like somewhere you have been before."); tween(fade, 1.2, { BackgroundTransparency = 1 }); sound("Dream", .3)
     elseif nextPhase == "blackout" then
         control(false); hideCharacter(true); label.Text = ""; hint.Text = ""; caption.Text = ""
         tween(fade, .55, { BackgroundTransparency = 0 }); sound("Drone", .12)
     elseif nextPhase == "awake" then
-        resetWorld(); spawnActor(); actor:PivotTo(markers.ActorSleep.CFrame); hideCharacter(true); control(false)
+        resetWorld(); spawnActor(); actor:PivotTo(markers.ActorSleep.CFrame); poseValues.sleep.Value=1; hideCharacter(true); control(false)
         player.CameraMode = Enum.CameraMode.Classic; camera.CameraType = Enum.CameraType.Scriptable; camera.FieldOfView = 63
         focusPoint = markers.EyeTarget.Position; camera.CFrame = CFrame.lookAt(markers.WakeCamera.Position, focusPoint)
         roomLamp.Brightness = 0; Lighting.Brightness = .55; Lighting.Ambient = Color3.fromRGB(13, 18, 33); correction.Saturation = -.35
@@ -172,17 +202,33 @@ local function change(nextPhase)
 end
 begin.Activated:Connect(function() action:FireServer("Begin") end)
 replay.Activated:Connect(function() action:FireServer("Begin") end)
-effectsButton.Activated:Connect(function() reduced = not reduced; effectsButton.Text = reduced and "Effects: reduced" or "Effects: full" end)
+local function toggleEffects() reduced=not reduced; effectsButton.Text=reduced and "Effects: reduced [V]" or "Effects: full [V]" end
+effectsButton.Activated:Connect(toggleEffects)
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
+    if input.KeyCode==Enum.KeyCode.M then toggleMusic(); return end
+    if input.KeyCode==Enum.KeyCode.V then toggleEffects(); return end
+    if (input.KeyCode==Enum.KeyCode.R or input.KeyCode==Enum.KeyCode.ButtonY) and phase=="dream" then action:FireServer("Return"); return end
     if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.ButtonX then
-        if phase == "dream" then action:FireServer("Exit") elseif phase == "awake" then action:FireServer("Lamp") elseif phase == "ready" then action:FireServer("Begin") end
+        if phase == "awake" then action:FireServer("Lamp") elseif phase == "ready" then action:FireServer("Begin") end
     end
 end)
 local lampButton = create("TextButton", gui, { AnchorPoint = Vector2.new(.5, 1), Position = UDim2.fromScale(.5, .77), Size = UDim2.fromOffset(150, 34), Text = "Bedside lamp", BackgroundColor3 = Color3.fromRGB(24, 29, 44), BackgroundTransparency = .2, TextColor3 = Color3.fromRGB(200, 207, 223), TextSize = 14, Font = Enum.Font.Gotham, Visible = false, BorderSizePixel = 0, ZIndex = 35 })
 lampButton.Activated:Connect(function() if phase == "awake" then action:FireServer("Lamp") elseif phase == "dream" then action:FireServer("Exit") end end)
+local returnButton=create("TextButton",gui,{AnchorPoint=Vector2.new(1,1),Position=UDim2.fromScale(.97,.82),Size=UDim2.fromOffset(145,34),Text="Return to path",BackgroundColor3=Color3.fromRGB(25,30,46),TextColor3=Color3.fromRGB(193,205,227),TextSize=13,Font=Enum.Font.Gotham,Visible=false,BorderSizePixel=0,ZIndex=35})
+returnButton.Activated:Connect(function() if phase=="dream" then action:FireServer("Return") end end)
+local function pauseForRecovery(duration)
+    recoveryToken=recoveryToken+1; local token=recoveryToken; local gen=generation
+    control(false); local humanoid=player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then humanoid:Move(Vector3.zero) end
+    task.delay(duration or .65,function() if token==recoveryToken and gen==generation and phase=="dream" then control(true) end end)
+end
 update.OnClientEvent:Connect(function(kind, data)
-    if kind == "Phase" then change(data.phase)
+    if kind == "Phase" then
+        if data.phase~=phase or data.phase=="complete" then change(data.phase) end
+        if data.phase=="dream" then targetCorruption=data.corruption or 0; memoryCollected=data.memories or memoryCollected; if data.recovering and data.recovering>0 then pauseForRecovery(data.recovering) end end
+        if data.completed and phase=="awake" then replay.Visible=true end
+    elseif kind=="Recovery" then pauseForRecovery(data.duration)
     elseif kind == "Text" then text(data.text)
     elseif kind == "Corruption" then targetCorruption = clamp(data.value, 0, 1)
     elseif kind == "Memory" then
@@ -198,33 +244,40 @@ RunService:BindToRenderStep("OpeningCameraAndEffects", Enum.RenderPriority.Camer
     if caption.Text ~= "" and now > captionUntil and phase ~= "loading" then caption.TextTransparency = math.min(1, caption.TextTransparency + dt) end
     camera = workspace.CurrentCamera
     if camera.CameraType == Enum.CameraType.Scriptable then camera.Focus = CFrame.new(focusPoint) end
-    if actor and walking then
-        local pivot = actorPivot and actorPivot.Value or actor:GetPivot()
-        for part, offset in pairs(actorOffsets) do
-            if part.Name == "LeftLeg" or part.Name == "RightLeg" or part.Name == "LeftArm" or part.Name == "RightArm" then
-                local side = (part.Name == "LeftLeg" or part.Name == "RightArm") and 1 or -1
-                part.CFrame = pivot * offset * CFrame.Angles(math.sin(now * 9) * .22 * side, 0, 0)
-            end
-        end
+    if actor and actorAnimator then
+        local pivot=actorPivot and actorPivot.Value or actor:GetPivot(); local values={}
+        for name,value in pairs(poseValues) do values[name]=value.Value end
+        values.target=room.LampBulb.Position; actorAnimator:apply(pivot,now,values)
     end
+    music:update(dt,corruption)
+    returnButton.Visible=phase=="dream" and UserInputService.TouchEnabled
     lampButton.Visible = phase == "awake" and UserInputService.TouchEnabled
     if phase == "dream" then
         corruption = corruption + (targetCorruption - corruption) * math.min(1, dt * 2.7)
         local k = corruption
-        Lighting.ClockTime = 14 * (1 - k); Lighting.Brightness = 2.2 - k * 1.9
-        Lighting.Ambient = Color3.fromRGB(118, 126, 149):Lerp(Color3.fromRGB(4, 3, 9), k)
-        Lighting.OutdoorAmbient = Color3.fromRGB(131, 139, 157):Lerp(Color3.fromRGB(4, 3, 9), k)
-        Lighting.FogEnd = 230 - k * 207; Lighting.FogColor = Color3.fromRGB(173, 165, 184):Lerp(Color3.fromRGB(3, 2, 9), k)
-        atmosphere.Density = .17 + k * .46; atmosphere.Color = Color3.fromRGB(199, 182, 178):Lerp(Color3.fromRGB(41, 27, 49), k)
-        correction.Saturation = -.08 - k * .83; correction.Contrast = .03 + k * .2; correction.TintColor = Color3.new(1, 1 - k * .36, 1 - k * .2)
-        blur.Size = reduced and 0 or math.max(0, k - .45) * 3
-        for part, data in pairs(decor) do
-            local seed = data.cf.Position.X * .2 + data.cf.Position.Z * .07
-            local shift = reduced and 0 or math.sin(now * .8 + seed) * math.max(0, k - .18) * 2
-            part.CFrame = data.cf * CFrame.new(shift, math.sin(seed + now * .3) * k * .3, 0) * CFrame.Angles(0, 0, reduced and 0 or math.sin(seed) * k * .1)
-            part.Color = data.color:Lerp(Color3.fromRGB(8, 5, 14), k * .85)
+        local mood=clamp(k/Config.NavigationCorruptionCap,0,1)
+        Lighting.ClockTime=14+mood*3.5; Lighting.Brightness=2.2-mood*.65
+        Lighting.Ambient=Color3.fromRGB(118,126,149):Lerp(Color3.fromRGB(68,76,108),mood)
+        Lighting.OutdoorAmbient=Color3.fromRGB(131,139,157):Lerp(Color3.fromRGB(78,87,120),mood)
+        Lighting.FogStart=30; Lighting.FogEnd=230-mood*95
+        Lighting.FogColor=Color3.fromRGB(180,174,201):Lerp(Color3.fromRGB(86,85,124),mood)
+        atmosphere.Density=.16+mood*.14; atmosphere.Color=Color3.fromRGB(210,190,208):Lerp(Color3.fromRGB(128,117,160),mood)
+        correction.Saturation=-.08-mood*.52; correction.Contrast=.03+mood*.09; correction.TintColor=Color3.new(1,1-mood*.12,1-mood*.03)
+        blur.Size=reduced and 0 or mood*.8
+        for part,data in pairs(decor) do
+            local seed=data.cf.Position.X*.2+data.cf.Position.Z*.07
+            local shift=reduced and 0 or math.sin(now*.55+seed)*mood*1.6
+            part.CFrame=data.cf*CFrame.new(shift,math.sin(seed+now*.3)*mood*.5,0)*CFrame.Angles(0,0,reduced and 0 or math.sin(seed)*mood*.12)
+            part.Color=data.color:Lerp(Color3.fromRGB(25,20,41),mood*.65)
         end
-        for part, color in pairs(platformColors) do part.Color = color:Lerp(Color3.fromRGB(6, 5, 12), k * .92) end
+        -- Walkable surfaces stay legible. Only scenery loses its color.
+        for part,color in pairs(platformColors) do part.Color=color:Lerp(Color3.fromRGB(118,126,155),mood*.35) end
+        local clock=markers:FindFirstChild("ClockPivot")
+        if clock then
+            local base=clock.CFrame*CFrame.new(0,0,.55)
+            dream.ClockMinute.CFrame=base*CFrame.Angles(0,0,now*(reduced and .04 or .22))*CFrame.new(0,2,0)
+            dream.ClockHour.CFrame=base*CFrame.Angles(0,0,now*.022)*CFrame.new(0,1.45,0)
+        end
         local tick = math.floor(now * 2)
         if tick ~= lastGlitch then
             lastGlitch = tick
@@ -235,12 +288,12 @@ RunService:BindToRenderStep("OpeningCameraAndEffects", Enum.RenderPriority.Camer
                 slice.Size = UDim2.fromScale(1, .005 + ((i * 13 + tick) % 6) / 200)
             end
         end
-        if now - phaseAt > 1.3 then fade.BackgroundTransparency = 1 - clamp((k - .88) / .15, 0, .75) end
-        local band = k > .88 and 4 or k > .72 and 3 or k > .5 and 2 or k > .25 and 1 or 0
+        if now - phaseAt > 1.3 then fade.BackgroundTransparency=1 end
+        local band = k > .59 and 4 or k > .48 and 3 or k > .33 and 2 or k > .18 and 1 or 0
         if band > lastBand then
             lastBand = band; text(({ "The wind stopped.", "You cannot remember the way back.", "Wake up. Wake up. Wake up.", "This is not your dream anymore." })[band])
         end
-        label.Text = k < .45 and "DREAM / FOLLOW THE LIGHTS" or k < .78 and "DREAM / SOMETHING IS WRONG" or "DREAM / WAKE UP"
+        label.Text=k<.3 and "DREAM / FOLLOW THE PALE PATH" or k<.52 and "DREAM / SOMETHING IS WRONG" or "DREAM / THE FRONT DOOR IS AHEAD"
     else for _, slice in ipairs(slices) do slice.BackgroundTransparency = 1 end end
     if phase == "awake" and now - phaseAt > 2 then
         local viewport = camera.ViewportSize; local mouse = UserInputService:GetMouseLocation()
@@ -250,8 +303,13 @@ RunService:BindToRenderStep("OpeningCameraAndEffects", Enum.RenderPriority.Camer
         camera.CFrame = CFrame.lookAt(origin, focusPoint) * CFrame.Angles(-y * .12, -x * .38, 0)
     end
 end)
-player.CharacterAdded:Connect(function()
-    task.wait(.6); action:FireServer("Ready")
+player.CharacterAdded:Connect(function(char)
+    task.wait(.6)
+    if phase=="dream" then
+        hideCharacter(false); safetyLight(true)
+        camera.CameraSubject=char:WaitForChild("Humanoid"); camera.CameraType=Enum.CameraType.Custom
+    end
+    action:FireServer("Ready")
 end)
 local initialCharacter = player.Character or player.CharacterAdded:Wait()
 initialCharacter:WaitForChild("HumanoidRootPart")

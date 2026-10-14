@@ -1,43 +1,64 @@
-# Roblox opening prototype
+# Roblox dream opening — updated prototype
 
-The same unnamed opening, rebuilt as a native 3D Roblox place.
+The same unnamed opening, now built around surreal exploration rather than obstacle-course jumps.
 
 ## Open and play
 
-1. Download **Opening.rbxlx**.
-2. In Roblox Studio, use **File → Open from File** and select it.
-3. Press **Play** (F5). Click **Go to sleep**.
+Download **Opening.rbxlx**, open it in Roblox Studio with **File → Open from File**, and press **Play**. The map, prompts, camera sequence, animation modules and music are already inside. Open this updated file when testing; an older Studio place does not pull GitHub changes automatically.
 
-The character walks to bed, lies down, closes his eyes, and the camera moves into his head. The dream becomes first person: walk with WASD, look with the mouse, and jump with Space. Follow three floating lights toward the distant door. The meadow deforms, fog thickens, the picture tears, colors die, and the dream turns black. Waking returns you to the same bedroom and the same clock time. Red eyes appear inside the closet. E tries the bedside lamp; it fails. Replay is available after the final reveal.
+- WASD / native touch controls: walk and explore.
+- Mouse / native camera controls: look around.
+- E / gamepad X / native touch prompt: interact with dream objects and doors.
+- R / gamepad Y / Return to path touch button: return safely to the last reached checkpoint.
+- M: music on/off. V: full/reduced effects.
+- Space remains Roblox's normal jump control, but **the entire route is walkable without jumping**.
 
-Native Roblox movement controls also support touch and gamepad. The lamp has a touch button, and gamepad X interacts. Reduced effects disables screen tears and scenery motion while keeping the story.
+## Dream changes
 
-## What's in the file
+A continuous shallow dream sea connects the whole map. Follow the pale path past a floating bed, backwards clocks, hovering paper fish, suspended furniture, an enormous door, an inverted bedroom and a staircase leading nowhere. Touch familiar objects for contextual dialogue. A little door leads to a hallway that cannot fit behind it; leaving the hallway returns you somewhere else. The real front door ends the dream.
 
-- An editable bedroom with walls, window, bed, bedding, rug, desk, books, nightstand, clock, lamp, closet and hidden red eyes.
-- A 3D floating meadow with eight safe landing platforms, trees, flowers, strange lamps, three memories, clouds, silhouettes and an exit door.
-- A local cinematic actor and camera sequence. Effects and story progression are separate for each player.
-- Server-controlled phases, checkpoint returns after falls, validated interactions, gradual corruption, a false awakening and replay.
+The floor, route lights and personal safety light stay readable as scenery distorts. Color, fog, prop movement and music change gradually. Full darkness happens after reaching the exit, during the cinematic blackout, rather than while navigating. An idle timeout eventually advances the story after four minutes.
 
-The geometry is already inside the place; no asset packs, HTTP requests or script pasting are needed.
+## Bedtime sequence
+
+The local cinematic actor now has segmented legs and arms. He walks with bent knees and counter-swinging arms, turns at the bed, sits, reaches for the lamp, turns it off, lies back, pulls up the blanket, closes his eyes and breathes. The camera follows his face into the dream.
+
+After the dream, you return to the same room and the same clock time. Red eyes appear in the closet. The bedside lamp fails. Replay becomes available after the reveal.
+
+## Falling and reset fixes
+
+- Main ground is continuous, with invisible edge barriers and a backup safety floor.
+- Checkpoints and portal destinations are inside the solid floor.
+- Ground recovery uses a server raycast, avatar-aware R6/R15 clearance, zero linear/angular velocity, a short anchored stabilization, and a brief client control reset.
+- Recovery retains memories, corruption and the furthest checkpoint.
+- Ready/status queries send a snapshot and **never teleport the player**. This prevents respawn queries from overriding checkpoint recovery.
+- R and the touch return button provide a manual escape if the character gets stuck.
+
+## Music
+
+Real Creator Store / APM asset IDs are configured, with quiet bedroom music, an ambient dream theme, a pitched-down dread layer, reverb, gradual filtering, crossfades and an awakening sting. M or the Music button mutes it. See **AUDIO-CREDITS.md** for asset links and availability notes. Audio loads asynchronously and never blocks the opening.
 
 ## Editing
 
-Expand **Workspace → OpeningWorld** to edit Bedroom, Dream and Markers. Keep marker names intact; scripts reference them. Bedroom props are normal anchored parts. The actor template lives in **ReplicatedStorage → OpeningAssets → Sleeper**.
+Expand **Workspace → OpeningWorld** to edit Bedroom, Dream and Markers. The solid floor and boundaries are in **Dream → Walkable**. Keep marker names intact. The actor template is in **ReplicatedStorage → OpeningAssets → Sleeper**.
 
-Scripts are also provided separately in **src/**:
+The prebuilt place contains all scripts:
 
-- Config.lua → ReplicatedStorage/OpeningShared/Config (ModuleScript)
-- State.lua → ReplicatedStorage/OpeningShared/State (ModuleScript)
-- OpeningServer.server.lua → ServerScriptService/OpeningServer (Script)
-- OpeningClient.client.lua → StarterPlayer/StarterPlayerScripts/OpeningClient (LocalScript)
+- Config, State, Navigation, ActorAnimator and Music: ModuleScripts in ReplicatedStorage/OpeningShared.
+- OpeningServer.server.lua: Script in ServerScriptService.
+- OpeningClient.client.lua: LocalScript in StarterPlayer/StarterPlayerScripts.
 
-The prebuilt file already contains all four. Rebuild it from source with `python3 build_place.py`. Run `python3 check_project.py` for XML, transform, embedded-source, Lua-compatible syntax and state checks. Rebuilding regenerates the modeled scene; export Studio edits before rebuilding if you want to retain them.
+Edit their corresponding files in **src/**. Rebuild and validate with:
 
-Audio slots in Config.Sounds are blank until you upload your own Roblox audio and enter its asset IDs. The visual opening works without audio. To collaborate on the live Studio project, publish it under your account and give your friend edit access through Roblox collaboration settings; both of you can then work in Studio.
+    python3 build_place.py
+    python3 check_project.py
+
+Rebuilding regenerates modeled geometry, so export Studio edits before rebuilding if you want to keep them.
 
 ## Validation
 
-The generated XML, object paths, references, transforms and scripts were checked outside Roblox Studio. The phase state machine was exercised with executed tests. **Studio is unavailable in the build environment, so the first in-engine playtest is still required.** The project has not been published to your Roblox account.
+The XML, references, transforms, embedded source and seven scripts were checked. Every segment of the walking route and every recovery/portal marker is checked against the solid floor. Executed tests cover phase flow, corruption limits, R6/R15 clearance, memory retention, actual server recovery, velocity clearing, manual return and Ready queries that cannot teleport.
 
-Official references: [Roblox place files](https://create.roblox.com/docs/projects/place-files), [camera control](https://create.roblox.com/docs/workspace/camera).
+**Roblox Studio is unavailable here**, so native rendering, the new body animation and audio playback still need a Studio playtest. This file has not been published to your Roblox account.
+
+Official references: [place files](https://create.roblox.com/docs/projects/place-files), [camera control](https://create.roblox.com/docs/workspace/camera), [audio](https://create.roblox.com/docs/audio).

@@ -75,14 +75,14 @@ for x in range(-15,17,3): part(room,'WallpaperStrip'+str(x),(.08,10.5,.06),(x,6,
 for z in [-14.45,14.45]: part(room,'Skirting'+str(z),(35,.45,.12),(0,.35,z),(91,80,94),'wood',False)
 part(room,'Rug',(15,.07,8),(-4,.07,5),(83,77,98),'fabric',False)
 part(room,'RugBorder',(14.5,.02,.14),(-4,.115,8.65),(143,128,142),'fabric',False)
-part(room,'BedFrame',(7,1,11),(-7,1.35,-5.5),(89,74,93),'wood')
-part(room,'Mattress',(6.8,1,10.7),(-7,2.32,-5.5),(168,164,180),'fabric')
+part(room,'BedFrame',(7,1,11),(-7,.95,-5.5),(89,74,93),'wood')
+part(room,'Mattress',(6.8,1,10.7),(-7,1.65,-5.5),(168,164,180),'fabric')
 part(room,'Headboard',(7.6,5,.55),(-7,2.5,-11.2),(106,86,105),'wood')
 for x in [-9.65,-4.35]:
     for z in [-10,.1]: part(room,'BedLeg',(.55,1.1,.55),(x,.6,z),(77,64,84),'wood')
-part(room,'Pillow',(3,.55,2.2),(-7,2.97,-8.5),(215,202,191),'fabric',False)
-part(room,'Blanket',(6.7,.28,6.5),(-7,2.98,-3.3),(91,108,138),'fabric',False)
-for x in [-9.4,-7.8,-6.2,-4.6]: part(room,'BlanketStripe',(.12,.035,6.3),(x,3.145,-3.3),(137,144,164),'fabric',False)
+part(room,'Pillow',(3,.55,2.2),(-7,2.31,-8.5),(215,202,191),'fabric',False)
+part(room,'Blanket',(6.7,.28,6.5),(-7,2.26,-3.3),(91,108,138),'fabric',False)
+for x in [-9.4,-7.8,-6.2,-4.6]: part(room,'BlanketStripe',(.12,.035,6.3),(x,2.425,-3.3),(137,144,164),'fabric',False)
 part(room,'Nightstand',(3,2.4,3),(-1.5,1.2,-6),(96,78,98),'wood')
 part(room,'Drawer',(2.65,.8,.08),(-1.5,1.65,-4.45),(116,94,116),'wood',False)
 part(room,'DrawerHandle',(.5,.12,.1),(-1.5,1.65,-4.36),(193,165,153),'metal',False)
@@ -117,57 +117,132 @@ for x in [10.3,11.7]:
     e=part(room,'EyeLeft' if x<11 else 'EyeRight',(.48,.19,.26),(x,5.65,-9.85),(246,43,64),'neon',False,1,shape=0); light(e,'RedGlow',(227,22,46),0,7)
 part(room,'PictureFrame',(3.4,4,.2),(4,7,-14.35),(137,110,129),'wood',False)
 part(room,'Picture',(2.9,3.5,.1),(4,7,-14.2),(117,133,153),collide=False)
-# Floating meadow. The collision route remains stable while decorations distort.
-centers=[(0,8,-240),(0,8,-270),(-7,10,-299),(7,11,-327),(18,10,-356),(14,12,-386),(0,12,-414),(0,13,-444)]
-for i,(x,y,z) in enumerate(centers,1):
-    part(dream,'Platform'+str(i),(24,4,26),(x,y-2,z),(92,116,112),'grass')
-    part(dream,'PlatformSoil'+str(i),(22,5,24),(x,y-6.5,z),(65,75,92),'concrete')
-    for side in [-1,1]: part(dream,'EdgeLight'+str(i)+str(side),(.12,.08,25),(x+side*11.3,y+.05,z),(171,200,179),'neon',False)
-    for j in range(5):
-        xx=x-9+j*4.3; zz=z+(-7 if j%2 else 7)
-        part(dream,'Distort_Grass'+str(i)+'_'+str(j),(.18,.7,.18),(xx,y+.35,zz),(148,172,151),'grass',False)
-        part(dream,'Distort_Flower'+str(i)+'_'+str(j),(.5,.18,.5),(xx,y+.78,zz),(226,177+j*7,162),'neon',False)
-    part(markers,'Checkpoint'+str(i),(.5,.5,.5),(x,y+4,z),(255,255,255),collide=False,transparency=1)
-for i,(x,y,z) in enumerate(centers):
-    tx=x+(-9 if i%2 else 8); tz=z-7
-    part(dream,'Distort_TreeTrunk'+str(i),(1,8,1),(tx,y+4,tz),(104,91,107),'wood',False)
-    for level in range(3):
-        part(dream,'Distort_TreeCrown'+str(i)+'_'+str(level),(7-level*1.6,5,7-level*1.6),(tx,y+7+level*2.1,tz),(76+level*5,111+level*3,118),'grass',False,shape=0)
-for i,(x,y,z) in enumerate([centers[1],centers[4],centers[6]],1):
-    memory=part(dream,'Memory'+str(i),(1.1,1.1,1.1),(x,y+3.8,z),(255,225,169),'neon',False,shape=0); light(memory,'MemoryGlow',(255,222,169),1.2,16)
-for i,(x,y,z) in enumerate([centers[0],centers[3],centers[5]]):
-    part(dream,'Distort_LampStem'+str(i),(.16,5,.16),(x+7,y+2.5,z+5),(142,148,166),'metal',False)
-    shade=part(dream,'Distort_LampShade'+str(i),(2.8,1.4,2.8),(x+7,y+5.3,z+5),(219,194,180),'fabric',False); light(shade,'StrangeLight',(255,215,176),.55,18)
-for i in range(13):
-    x=(-1 if i%2 else 1)*(35+i*2.5); z=-235-i*18
-    part(dream,'Distort_Cloud'+str(i),(18+i%3*4,3,10),(x,35+i%4*4,z),(195,181,190),'plastic',False,shape=0)
-part(dream,'Distort_Sun',(22,22,22),(62,65,-365),(255,234,183),'neon',False,shape=0)
-part(dream,'DoorFrame',(6.3,9,.7),(0,17.5,-452),(164,151,163),'wood',False)
-part(dream,'DoorVoid',(4.7,7.7,.8),(0,17.3,-451.5),(5,4,12),collide=False)
-part(dream,'Distort_Door',(3.5,7.7,.5),(2.1,17.3,-450.1),(123,104,130),'wood',False,rotation=matrix(0,-34,0))
-part(dream,'DoorHandle',(.2,.2,.35),(1,17.3,-449.6),(226,192,163),'metal',False,shape=0)
-for i,(x,z) in enumerate([(-19,-298),(27,-358),(-17,-415)]):
-    part(dream,'Distort_ShadowBody'+str(i),(2.3,6,1.2),(x,15,z),(18,13,28),collide=False)
-    part(dream,'Distort_ShadowHead'+str(i),(1.7,1.8,1.5),(x,19,z),(89,68,94),collide=False,shape=0)
+# A continuous dream sea: the entire playable route is solid and level.
+walkable=item('Folder','Walkable',dream)
+ground=part(walkable,'PlatformGround',(180,2,330),(0,7,-340),(151,160,187),'plastic')
+prop(ground,'float','Reflectance',.12)
+part(walkable,'SafetyFloor',(200,2,360),(0,-10,-340),(70,78,100),'plastic',True,1)
+for x in [-82,82]: part(walkable,'BoundarySide',(2,38,326),(x,24,-340),(0,0,0),collide=True,transparency=1)
+for z in [-187,-493]: part(walkable,'BoundaryEnd',(164,38,2),(0,24,z),(0,0,0),collide=True,transparency=1)
+centers=[(0,8,-232),(-8,8,-254),(-15,8,-278),(0,8,-302),(12,8,-330),(2,8,-360),(-12,8,-387),(0,8,-444)]
+for i,(x,y,z) in enumerate(centers,1): part(markers,'Checkpoint'+str(i),(.5,.5,.5),(x,y+4,z),(255,255,255),collide=False,transparency=1)
+# A pale path and lit edges remain visible through every dream effect.
+route=[centers[0],centers[2],centers[4],centers[6],centers[7]]
+for segment,(a,b) in enumerate(zip(route,route[1:])):
+    distance=math.dist(a,b); steps=math.ceil(distance/4)
+    for j in range(steps+1):
+        t=j/steps; x=a[0]+(b[0]-a[0])*t; z=a[2]+(b[2]-a[2])*t
+        part(dream,'RouteTile'+str(segment)+'_'+str(j),(10,.04,4.4),(x,8.025,z),(197,192,211),'plastic',False)
+        for side in [-1,1]: part(dream,'RouteGlow'+str(segment)+'_'+str(j)+'_'+str(side),(.18,.08,1.5),(x+side*5.6,8.11,z),(187,220,230),'neon',False)
+        if j%5==0:
+            pebble=part(dream,'PathLight'+str(segment)+'_'+str(j),(.42,.25,.6),(x,8.19,z),(223,232,246),'neon',False)
+            light(pebble,'GuideLight',(178,205,255),.48,17)
+# Low-poly reeds and floating paper fish in an impossible, shallow sea.
+for i in range(24):
+    x=(-1 if i%2 else 1)*(23+i%4*9); z=-221-i*10
+    part(dream,'Distort_Reed'+str(i),(.2,2+i%3,.2),(x,9+i%3*.5,z),(107,135,159),'grass',False)
+    fish=part(dream,'Distort_PaperFish'+str(i),(1.7,.08,.65),(x+4,13+i%4,z-3),(210,190+i%3*8,203),'plastic',False,rotation=matrix(0,i*37,12))
+    part(dream,'Distort_FishTail'+str(i),(.65,.08,.8),(x+3.15,13+i%4,z-3),(206,189,206),'plastic',False,rotation=matrix(0,i*37,42))
+# Memory one: the same bed, floating where a bedroom should not be.
+for name,size,pos,rgb in [
+    ('Bed',(7,.8,11),(-15,11.4,-281),(101,89,121)),
+    ('Mattress',(6.8,.75,10.8),(-15,12.1,-281),(209,203,219)),
+    ('Pillow',(3,.5,2.2),(-15,12.7,-285),(232,224,220)),
+    ('Blanket',(6.7,.2,6.3),(-15,12.6,-278.8),(113,130,162)),
+]:
+    part(dream,'Distort_Floating'+name,size,pos,rgb,'fabric',False)
+# A clock that ticks backwards above a ring of chairs.
+clock_pivot=(12,19,-334)
+part(markers,'ClockPivot',(.2,.2,.2),clock_pivot,collide=False,transparency=1)
+part(dream,'ClockFace',(.7,9,9),clock_pivot,(215,208,218),'plastic',False,rotation=matrix(0,90,0),shape=2)
+part(dream,'ClockHour',(.22,2.9,.16),(12,20.45,-333.55),(90,73,107),'metal',False)
+part(dream,'ClockMinute',(.13,4,.17),(12,21,-333.45),(90,73,107),'metal',False)
+for i in range(12):
+    q=i*math.pi/6
+    part(dream,'ClockMark'+str(i),(.19,.6,.12),(12+math.sin(q)*3.6,19+math.cos(q)*3.6,-333.48),(113,90,119),collide=False,rotation=matrix(0,0,-i*30))
+for i in range(7):
+    q=i*math.pi*2/7; x=12+math.sin(q)*13; z=-330+math.cos(q)*10
+    part(dream,'Distort_ChairSeat'+str(i),(2.2,.25,2.2),(x,10+i*.2,z),(137,121,149),'wood',False)
+    part(dream,'Distort_ChairBack'+str(i),(2.2,2.8,.25),(x,11.5+i*.2,z+1),(137,121,149),'wood',False)
+# A small door leads to a hallway that cannot fit behind it.
+def door(x,z,height=9,width=5,prefix='Door',parent=dream,y=8,rgb=(189,174,197)):
+    for side in [-1,1]: part(parent,prefix+'Jamb'+str(side),(.45,height,.6),(x+side*width*.5,y+height*.5,z),rgb,'wood',False)
+    part(parent,prefix+'Lintel',(width+.5,.5,.6),(x,y+height,z),rgb,'wood',False)
+    part(parent,prefix+'Void',(width-.4,height-.3,.15),(x,y+height*.5,z-.2),(9,10,22),collide=False)
+    part(parent,'Distort_'+prefix+'Leaf',(width*.72,height-.5,.45),(x+width*.38,y+height*.5,z+1),rgb,'wood',False,rotation=matrix(0,-48,0))
+door(-12,-387,8,4,'SmallDoor')
+hall=item('Model','ImpossibleHallway',dream)
+part(hall,'HallFloor',(16,.05,28),(-38,8.04,-391),(208,193,207),'fabric',False)
+for x in [-46,-30]: part(hall,'HallWall',(1,15,29),(x,15.5,-391),(178,167,189),'concrete',False)
+part(hall,'HallCeiling',(17,.5,29),(-38,23,-391),(174,166,187),'concrete',False)
+for z in [-381,-388,-395,-402]:
+    lamp=part(hall,'HallLight',(2,.1,.8),(-38,22.5,z),(239,213,189),'neon',False)
+    light(lamp,'HallGlow',(221,200,232),.5,20)
+door(-38,-405,9,5,'HallReturn',hall)
+# Enormous everyday objects, hanging furniture and a staircase to nowhere.
+for i in range(8):
+    part(dream,'Distort_EmptyStair'+str(i),(12,.7,3),(43,10+i*2.5,-280-i*3.5),(204-i*3,184,203),'plastic',False)
+for i in range(9):
+    x=(-1 if i%2 else 1)*(37+i%3*11); z=-232-i*25
+    part(dream,'Distort_Cloud'+str(i),(24+i%3*7,3,14),(x,41+i%4*5,z),(211,195,213),'plastic',False,shape=0)
+    part(dream,'Distort_LampStem'+str(i),(.16,5,.16),(x,12,z),(167,149,181),'metal',False)
+    shade=part(dream,'Distort_LampShade'+str(i),(3,1.8,3),(x,15,z),(233,209,203),'fabric',False)
+    light(shade,'StrangeLight',(236,205,231),.45,19)
+part(dream,'Distort_Moon',(28,28,28),(54,66,-378),(239,228,211),'neon',False,shape=0)
+door(39,-423,32,18,'GiantDoor',y=8,rgb=(174,157,190))
+# An inverted miniature bedroom suspended over the water.
+part(dream,'Distort_InvertedFloor',(16,.7,15),(-34,39,-305),(153,139,162),'wood',False)
+part(dream,'Distort_InvertedBed',(5,1,8),(-35,36.7,-305),(139,152,179),'fabric',False)
+part(dream,'Distort_InvertedPillow',(2,.5,1.5),(-35,35.9,-302.3),(230,218,213),'fabric',False)
+part(dream,'Distort_InvertedRug',(9,.06,5),(-32,38.57,-310),(188,156,186),'fabric',False)
+for i,(x,z) in enumerate([(-35,-310),(30,-365),(-28,-435)]):
+    part(dream,'Distort_ShadowBody'+str(i),(2.3,6,1.2),(x,12,z),(27,22,42),collide=False)
+    part(dream,'Distort_ShadowHead'+str(i),(1.7,1.8,1.5),(x,16,z),(129,112,140),collide=False,shape=0)
+door(0,-452,10,6,'FrontDoor',y=8,rgb=(207,198,215))
+def prompt_part(name,pos,action_text,object_text):
+    p=part(dream,name,(.5,.5,.5),pos,collide=False,transparency=1)
+    prompt=item('ProximityPrompt','Remember',p)
+    prop(prompt,'string','ActionText',action_text); prop(prompt,'string','ObjectText',object_text)
+    prop(prompt,'float','HoldDuration',.25); prop(prompt,'float','MaxActivationDistance',11)
+    prop(prompt,'bool','RequiresLineOfSight',False); prop(prompt,'token','KeyboardKeyCode',101); prop(prompt,'token','GamepadKeyCode',1002)
+    return p
+for i,(pos,act,title) in enumerate([
+    ((-15,11,-276),'Touch blanket','Your bed, without a bedroom'),
+    ((12,11,-328),'Touch the clock','A clock running backwards'),
+    ((-12,11,-386),'Open','An ordinary little door'),
+],1):
+    prompt_part('Interaction'+str(i),pos,act,title)
+    memory=part(dream,'Memory'+str(i),(.55,.55,.55),(pos[0],12.8,pos[2]),(221,224,252),'neon',False,shape=0); light(memory,'MemoryGlow',(197,208,255),.55,14)
+prompt_part('HallwayReturn',(-38,11,-404),'Step through','The door behind you')
+prompt_part('ExitPrompt',(0,11,-446),'Wake up','The front door')
+
 # Markers are invisible non-colliding helpers, editable in Studio.
-marker_defs={'RoomSpawn':((0,4,8),matrix()),'ActorStart':((5,2.9,7),matrix()),'ActorBedside':((-2.9,2.9,-4),matrix(0,90,0)),'ActorSit':((-4.1,3.75,-4),matrix(0,90,0)),'ActorSleep':((-7,3.25,-5.7),((-1,0,0),(0,0,-1),(0,-1,0))), 'IntroCamera':((12,7.8,12),matrix()),'WakeCamera':((-7,3.8,-7.65),matrix()),'EyeTarget':((11,5.65,-9.85),matrix()),'DreamSpawn':((0,12,-232),matrix()),'DreamExit':((0,16,-446),matrix())}
+marker_defs={'RoomSpawn':((0,4,8),matrix()),'ActorStart':((5,3.18,7),matrix()),'ActorBedside':((-2.9,3.18,-4),matrix(0,-90,0)),'ActorSit':((-4.4,3.15,-4),matrix(0,-90,0)),'ActorSleep':((-7,2.68,-5.7),((-1,0,0),(0,0,-1),(0,-1,0))), 'IntroCamera':((12,7.8,12),matrix()),'WakeCamera':((-7,3.35,-7.65),matrix()),'EyeTarget':((11,5.65,-9.85),matrix()),'DreamSpawn':((0,12,-232),matrix()),'DreamExit':((0,12,-446),matrix()),'HallwaySpawn':((-38,12,-381),matrix()),'PortalReturn':((-12,12,-395),matrix())}
 for name,(pos,rot) in marker_defs.items(): part(markers,name,(.5,.5,.5),pos,(255,255,255),collide=False,transparency=1,rotation=rot)
 spawn=part(workspace,'SpawnLocation',(3,.2,3),(0,.15,8),(40,45,65),collide=False,transparency=1,class_name='SpawnLocation'); prop(spawn,'bool','Neutral',True); prop(spawn,'float','Duration',0)
 # Replicated local cinematic actor. His face is geometry, with no uploaded asset dependencies.
 replicated=item('ReplicatedStorage','ReplicatedStorage'); assets=item('Folder','OpeningAssets',replicated); sleeper=item('Model','Sleeper',assets)
-body=[('Root',(2,2,1),(0,0,0),(0,0,0),1),('Torso',(2,2,1),(0,.5,0),(110,134,164),0),('Head',(1.65,1.4,1.3),(0,2.2,0),(221,184,155),0),('Hair',(1.74,.52,1.39),(0,2.78,0),(43,33,44),0),('LeftArm',(.85,2,.9),(-1.45,.45,0),(110,134,164),0),('RightArm',(.85,2,.9),(1.45,.45,0),(110,134,164),0),('LeftLeg',(.9,2.4,.9),(-.55,-1.7,0),(59,74,96),0),('RightLeg',(.9,2.4,.9),(.55,-1.7,0),(59,74,96),0),('LeftHand',(.85,.4,.9),(-1.45,-.7,0),(221,184,155),0),('RightHand',(.85,.4,.9),(1.45,-.7,0),(221,184,155),0),('FaceEyeL',(.13,.13,.055),(-.32,2.28,-.68),(46,34,41),0),('FaceEyeR',(.13,.13,.055),(.32,2.28,-.68),(46,34,41),0),('Mouth',(.35,.065,.045),(0,1.92,-.68),(143,97,94),0)]
+body=[('Root',(2,2,1),(0,0,0),(0,0,0),1),('Torso',(2,2,1),(0,.5,0),(110,134,164),0),('Head',(1.65,1.4,1.3),(0,2.2,0),(221,184,155),0),('Hair',(1.74,.52,1.39),(0,2.78,0),(43,33,44),0),('LeftArm',(.85,1.1,.9),(-1.36,.6,0),(110,134,164),0),('RightArm',(.85,1.1,.9),(1.36,.6,0),(110,134,164),0),('LeftLeg',(.9,1.15,.9),(-.55,-1.075,0),(59,74,96),0),('RightLeg',(.9,1.15,.9),(.55,-1.075,0),(59,74,96),0),('LeftHand',(.85,.4,.9),(-1.45,-.7,0),(221,184,155),0),('RightHand',(.85,.4,.9),(1.45,-.7,0),(221,184,155),0),('FaceEyeL',(.13,.13,.055),(-.32,2.28,-.68),(46,34,41),0),('FaceEyeR',(.13,.13,.055),(.32,2.28,-.68),(46,34,41),0),('Mouth',(.35,.065,.045),(0,1.92,-.68),(143,97,94),0)]
+body += [
+    ('LeftLowerLeg',(.82,1.25,.83),(-.55,-2.275,0),(59,74,96),0),
+    ('RightLowerLeg',(.82,1.25,.83),(.55,-2.275,0),(59,74,96),0),
+    ('LeftFoot',(.94,.28,1.2),(-.55,-3.04,-.12),(210,211,218),0),
+    ('RightFoot',(.94,.28,1.2),(.55,-3.04,-.12),(210,211,218),0),
+    ('LeftForearm',(.72,.84,.8),(-1.36,-.37,0),(110,134,164),0),
+    ('RightForearm',(.72,.84,.8),(1.36,-.37,0),(110,134,164),0),
+]
 actor_root=None
 for name,size,pos,rgb,trans in body:
     obj=part(sleeper,name,size,pos,rgb,'fabric' if name in ['Torso','LeftLeg','RightLeg','LeftArm','RightArm'] else 'plastic',False,trans)
     if name=='Root': actor_root=obj
 prop(sleeper,'Ref','PrimaryPart',actor_root.attrib['referent'])
 remote_folder=item('Folder','OpeningRemotes',replicated); item('RemoteEvent','Action',remote_folder); item('RemoteEvent','Update',remote_folder)
-shared=item('Folder','OpeningShared',replicated); script(shared,'ModuleScript','Config','Config.lua'); script(shared,'ModuleScript','State','State.lua')
+shared=item('Folder','OpeningShared',replicated); script(shared,'ModuleScript','Config','Config.lua'); script(shared,'ModuleScript','State','State.lua'); script(shared,'ModuleScript','Navigation','Navigation.lua'); script(shared,'ModuleScript','ActorAnimator','ActorAnimator.lua'); script(shared,'ModuleScript','Music','Music.lua')
 server=item('ServerScriptService','ServerScriptService'); script(server,'Script','OpeningServer','OpeningServer.server.lua')
 starter=item('StarterPlayer','StarterPlayer'); starter_scripts=item('StarterPlayerScripts','StarterPlayerScripts',starter); script(starter_scripts,'LocalScript','OpeningClient','OpeningClient.client.lua')
 item('StarterGui','StarterGui'); item('SoundService','SoundService')
 lighting=item('Lighting','Lighting'); prop(lighting,'float','ClockTime',.23); prop(lighting,'float','Brightness',1.4); prop(lighting,'float','ExposureCompensation',-.15); color(lighting,'Ambient',(38,42,64)); color(lighting,'OutdoorAmbient',(43,51,77)); color(lighting,'FogColor',(21,27,46)); prop(lighting,'float','FogStart',0); prop(lighting,'float','FogEnd',150); prop(lighting,'bool','GlobalShadows',True)
-E.indent(root,space='  ')
+# Compact XML keeps the Studio download small; editable source remains in src/.
 out=ROOT/'Opening.rbxlx'; E.ElementTree(root).write(out,encoding='utf-8',xml_declaration=True)
 (ROOT/'map-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(f'Built {out.name}: {serial} instances, {len(manifest)} geometry parts, {out.stat().st_size:,} bytes.')
