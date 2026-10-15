@@ -1,20 +1,20 @@
-# Roblox opening and first playable day
+# Nightwatchers — opening and first playable day
 
-An unnamed native Roblox horror prototype. Download **Opening.rbxlx**, open it in **Roblox Studio → File → Open from File**, and press **Play**. All geometry, scripts, prompts, UI and configured music are embedded. No script pasting is needed.
+A native Roblox horror game. Download **Opening.rbxlx**, open it in **Roblox Studio → File → Open from File**, and press **Play**. All geometry, scripts, prompts, UI and configured music are embedded. No script pasting is needed.
 
 Open this newly downloaded place to test the update. An older open Studio place does not automatically load changes from GitHub. For browser-only updates to an existing empty Roblox experience, see [Chromebook publishing](PUBLISHING.md). Studio publishing remains available.
 
 ## What happens
 
 1. A black loading cover and a client-ready spawning handshake prevent the player's account avatar from appearing before the cinematic.
-2. The character walks around the furniture, lifts a hinged section of the blanket, gets underneath it, settles the blanket over his body and falls asleep. The camera moves toward his head.
-3. You explore a dream with a continuous walkable floor, floating furniture and books, backwards clocks, rising rain, paper fish, a phone, a cup full of stars and lanterns. Six objects can be interacted with; a small door opens into an impossible hallway.
+2. The character walks around the furniture, leans to grasp a blanket corner, lifts it while its far and foot edges remain pinned, gets underneath and uses the other hand to pull it down. A 48-patch cloth surface settles over his body. The camera moves toward his head.
+3. You explore a dream with a continuous walkable floor and ten interactive objects. A small door opens into an impossible hallway; new memories include pages with changing words, a tap that pours upward and releases following paper boats, a photograph that switches between home and work, and a coat that releases flying leaves. See [dream design and research](DREAM-DESIGN.md).
 4. **Nothing glitches or corrupts during the first 45 seconds**, regardless of exploration or interactions. Distortion then builds gradually. At **90 seconds**, the dream wakes you automatically. Doors never control waking.
-5. The bedroom is darker. Red eyes appear in the closet, then disappear. After the glow fades, E turns on the lamp and the character gets out of bed.
-6. Walk to the couch and watch the news. A fictional report describes two unexplained overnight deaths. It is presented on the TV and in timed subtitles.
+5. The bedroom is darker. Red eyes appear in the closet, then disappear. The closet faces the bed and the cinematic head is hidden during the first-person pillow view, keeping the sightline clear. After the glow fades, E turns on the lamp and the character gets out of bed.
+6. Walk to the couch and watch the news. The camera moves ahead of the character's head to frame the whole TV screen. A fictional report describes two unexplained overnight deaths, with timed subtitles.
 7. The character says, “I should probably eat some breakfast.” Take bread from the fridge, use the toaster, wait for it to pop and eat.
 8. Get into the car, drive along the road to work, slow down and park. Walk into the fast-food restaurant.
-9. Take three different orders, prepare the requested burgers, fries and drinks, and serve them. Wipe the counter and empty the trash to finish the shift. A coworker can be spoken to.
+9. Take three different orders, prepare the requested burgers, fries and drinks, and serve them. Actual layered food models appear on the tray as items are prepared. Wipe the counter and empty the trash to finish the shift. A coworker can be spoken to.
 10. Drive home, enter the house and go to bed again. The prototype finishes at the second bedtime and offers replay.
 
 An objective and a small glowing marker guide each daytime task. Actions are validated on the server and cannot skip the news, toast timer, orders or cleanup.
@@ -41,7 +41,7 @@ Cars use server-owned arcade movement on a continuous bounded road. Releasing th
 - OpeningWorld → Day: Kitchen, Street, Restaurant, cars and daytime interactions.
 - OpeningWorld → Markers: choreography, spawn, recovery and parking locations.
 - ReplicatedStorage → OpeningAssets → Sleeper: the segmented cinematic character.
-- ReplicatedStorage → OpeningShared: Config, State, Navigation, Driving, ActorAnimator and Music.
+- ReplicatedStorage → OpeningShared: Config, State, Navigation, Driving, ActorAnimator, Music, Cloth and DreamMotion.
 - ReplicatedFirst: Loading and OpeningClient LocalScripts. The main client starts here so it can request avatar spawning only after its UI and event receivers exist.
 - ServerScriptService: OpeningServer.
 
@@ -50,7 +50,7 @@ The corresponding editable sources are in **src/**. Rebuild owned geometry and e
     python3 build_place.py
     python3 check_project.py
 
-The generator uses **build_day.py** for the house extension and workday. Rebuilding replaces generated geometry; export Studio changes before rebuilding to preserve hand edits.
+The generator uses **build_day.py** for the house extension and workday, and **build_details.py** for household/restaurant props and dream memories. The house has cabinets, a sink, breakfast clutter, shelving and soft furnishings; work includes tiled surfaces, grill controls and hood, fryer basket, soda cups, menu boards, packaging and staff uniforms. Rebuilding replaces generated geometry; export Studio changes before rebuilding to preserve hand edits.
 
 Config owns the 45-second delay, 90-second waking timer, report text, order recipes, audio IDs and car tuning. Story state is kept per player for the running session. This prototype does not yet persist progress between sessions.
 
@@ -66,7 +66,7 @@ Configured Creator Store / APM tracks provide bedroom music, a dream theme, a dr
 
 ## Validation
 
-The generated XML, references, transforms and embedded sources pass checks. All nine Lua-compatible scripts compile. Geometry checks cover the cinematic walking route, dream recovery points, connected house/street ground and parking areas.
+The generated XML, references, transforms and embedded sources pass checks. All eleven Lua-compatible scripts compile. Geometry checks cover the cinematic walking route, cloth anchors, TV-camera placement, dream recovery points, connected house/street ground and parking areas.
 
 Executed tests cover the strict quiet period, automatic waking, disappearing-eye/lamp timing, breakfast, every order, cleanup, both drives and second bedtime. The actual server script is run with service substitutes to exercise the loading handshake, checkpoint recovery, velocity clearing, invalid quest actions and a complete playthrough.
 

@@ -87,11 +87,12 @@ for x in [-9.65,-4.35]:
     for z in [-10,.1]: part(room,'BedLeg',(.55,1.1,.55),(x,.6,z),(77,64,84),'wood')
 part(room,'Pillow',(3,.55,2.2),(-7,2.31,-8.5),(215,202,191),'fabric',False)
 part(room,'Blanket',(6.7,.16,2.8),(-7,2.35,-1.45),(91,108,138),'fabric',False)
-# Six attached cloth strips open at the far mattress edge BEFORE the actor enters.
+# A small cloth grid bends at the lifted corner; the far and foot edges stay down.
 for i in range(6):
-    x=-10.35+(i+.5)*6.7/6
-    panel=part(room,'BlanketPanel'+str(i+1),(6.7/6+.025,.13,4),(x,2.35,-4.85),(91,108,138),'fabric',False)
-    part(room,'BlanketStripe'+str(i+1),(.08,.02,3.95),(x,2.43,-4.85),(137,144,164),'fabric',False)
+    for j in range(8):
+        x=-10.35+(i+.5)*6.7/6; z=-2.85-(j+.5)*4/8
+        part(room,f'BlanketPatch{i+1}_{j+1}',(6.7/6+.025,.09,4/8+.025),(x,2.35,z),(91,108,138),'fabric',False)
+        part(room,f'BlanketStitch{i+1}_{j+1}',(.045,.018,4/8+.025),(x,2.405,z),(137,144,164),'fabric',False)
 part(room,'Nightstand',(3,2.4,3),(-1.5,1.2,-6),(96,78,98),'wood')
 part(room,'Drawer',(2.65,.8,.08),(-1.5,1.65,-4.45),(116,94,116),'wood',False)
 part(room,'DrawerHandle',(.5,.12,.1),(-1.5,1.65,-4.36),(193,165,153),'metal',False)
@@ -244,9 +245,11 @@ for x,z in [(-18,-242),(18,-287),(-5,-316)]:
     part(dream,'Float_BookWing',(2.4,.12,1.7),(x+2.2,14,z),(240,215,187),'fabric',False,rotation=matrix(0,22,15))
 from build_day import build_day
 build_day(globals())
+from build_details import build_details
+build_details(globals())
 
 # Markers are invisible non-colliding helpers, editable in Studio.
-marker_defs={'RoomSpawn':((0,4,8),matrix()),'ActorStart':((0,3.18,9),matrix()),'ActorWalk1':((0,3.18,3),matrix()),'ActorWalk2':((-1.25,3.18,.8),matrix(0,38,0)),'ActorBedside':((-1.25,3.18,-2.3),matrix(0,90,0)),'ActorSit':((-3.95,3.1,-2.2),matrix(0,-90,0)),'ActorSleep':((-7,2.85,-5.3),((-1,0,0),(0,0,-1),(0,-1,0))), 'IntroCamera':((12,7.8,12),matrix()),'WakeCamera':((-7,3.95,-7.6),matrix()),'EyeTarget':((11,5.65,-9.85),matrix()),'DreamSpawn':((0,12,-232),matrix()),'DreamExit':((0,12,-446),matrix()),'HallwaySpawn':((-38,12,-381),matrix()),'PortalReturn':((-12,12,-395),matrix())}
+marker_defs={'RoomSpawn':((0,4,8),matrix()),'ActorStart':((0,3.18,9),matrix()),'ActorWalk1':((0,3.18,3),matrix()),'ActorWalk2':((-1.25,3.18,.8),matrix(0,38,0)),'ActorBedside':((-1.25,3.18,-2.3),matrix(0,90,0)),'ActorSit':((-3.95,3.1,-2.2),matrix(0,-90,0)),'ActorSleep':((-7,2.85,-5.3),((-1,0,0),(0,0,-1),(0,-1,0))), 'IntroCamera':((12,7.8,12),matrix()),'WakeCamera':((-6.4,3.8,-7.55),matrix()),'EyeTarget':(closet_target,matrix()),'DreamSpawn':((0,12,-232),matrix()),'DreamExit':((0,12,-446),matrix()),'HallwaySpawn':((-38,12,-381),matrix()),'PortalReturn':((-12,12,-395),matrix())}
 for name,(pos,rot) in marker_defs.items(): part(markers,name,(.5,.5,.5),pos,(255,255,255),collide=False,transparency=1,rotation=rot)
 spawn=part(workspace,'SpawnLocation',(3,.2,3),(0,.15,8),(40,45,65),collide=False,transparency=1,class_name='SpawnLocation'); prop(spawn,'bool','Neutral',True); prop(spawn,'float','Duration',0)
 # Replicated local cinematic actor. His face is geometry, with no uploaded asset dependencies.
@@ -267,7 +270,7 @@ for name,size,pos,rgb,trans in body:
 prop(sleeper,'Ref','PrimaryPart',actor_root.attrib['referent'])
 remote_folder=item('Folder','OpeningRemotes',replicated); item('RemoteEvent','Action',remote_folder); item('RemoteEvent','Update',remote_folder)
 shared=item('Folder','OpeningShared',replicated)
-for name in ['Config','State','Navigation','Driving','ActorAnimator','Music']: script(shared,'ModuleScript',name,name+'.lua')
+for name in ['Config','State','Navigation','Driving','ActorAnimator','Music','Cloth','DreamMotion']: script(shared,'ModuleScript',name,name+'.lua')
 server=item('ServerScriptService','ServerScriptService'); script(server,'Script','OpeningServer','OpeningServer.server.lua')
 players=item('Players','Players'); prop(players,'bool','CharacterAutoLoads',False)
 # Main client also lives in ReplicatedFirst so Ready can spawn the avatar after UI exists.

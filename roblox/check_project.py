@@ -24,8 +24,10 @@ required=['RoomSpawn','ActorStart','ActorWalk1','ActorWalk2','ActorBedside','Act
 for n in required:
     marker=child(markers,n); assert val(marker,'bool','CanCollide')=='false' and val(marker,'float','Transparency')=='1'
 for n in ['LampBulb','EyeLeft','EyeRight','Floor','BedFrame','Pillow','ClosetVoid','TVScreen','CouchBase','CeilingLight']: child(room,n)
-for i in range(1,7): assert child(child(dream,'Interaction'+str(i)),'Remember').attrib['class']=='ProximityPrompt'
-for i in range(1,7): child(room,'BlanketPanel'+str(i))
+for i in range(1,11): assert child(child(dream,'Interaction'+str(i)),'Remember').attrib['class']=='ProximityPrompt'
+for i in range(1,7):
+    for j in range(1,9): child(room,f'BlanketPatch{i}_{j}');child(room,f'BlanketStitch{i}_{j}')
+assert xyz(child(markers,'TVView'))[2]<xyz(child(markers,'ActorCouch'))[2]-.65,'TV camera must be in front of the head'
 floor=child(child(dream,'Walkable'),'PlatformGround')
 assert val(floor,'bool','CanCollide')=='true'
 fp,fs=xyz(floor),size(floor); assert abs(fp[1]+fs[1]/2-8)<.001
@@ -74,7 +76,7 @@ for p in root.iter('CoordinateFrame'):
     rows=[[float(p.find(f'R{i}{j}').text) for j in range(3)] for i in range(3)]
     for i in range(3):
         for j in range(3): assert abs(sum(rows[i][k]*rows[j][k] for k in range(3))-(i==j))<1e-6
-script_files={n:n+'.lua' for n in ['Config','State','Navigation','Driving','ActorAnimator','Music']}
+script_files={n:n+'.lua' for n in ['Config','State','Navigation','Driving','ActorAnimator','Music','Cloth','DreamMotion']}
 script_files.update(OpeningServer='OpeningServer.server.lua',OpeningClient='OpeningClient.client.lua',Loading='Loading.client.lua')
 for o in items:
     if o.attrib['class'] in ['Script','LocalScript','ModuleScript']:
@@ -100,11 +102,11 @@ def run(code,execute=False):
     message=lua.lua_tolstring(state,-1,None).decode() if err else ''
     lua.lua_close(state); assert not err,message
 for f in sorted((ROOT/'src').glob('*.lua')): run(f.read_text())
-prefix=''.join('local '+n+'=(function()\n'+(ROOT/'src'/script_files[n]).read_text()+'\nend)()\n' for n in ['Config','State','Navigation','Driving'])
+prefix=''.join('local '+n+'=(function()\n'+(ROOT/'src'/script_files[n]).read_text()+'\nend)()\n' for n in ['Config','State','Navigation','Driving','Cloth','DreamMotion'])
 run(prefix+(ROOT/'tests/state_day.lua').read_text(),True)
 run(prefix+(ROOT/'tests/server_recovery.lua').read_text().replace('__SERVER_CODE__',(ROOT/'src/OpeningServer.server.lua').read_text()),True)
-print(f'PASS: {len(items)} instances; XML, references, embedded sources and nine Lua syntax checks.')
-print('PASS: furniture clearance, six dream interactions, connected ground, two parking areas and complete day map.')
+print(f'PASS: {len(items)} instances; XML, references, embedded sources and eleven Lua syntax checks.')
+print('PASS: furniture clearance, ten dream interactions, flexible cloth, clear TV view, connected ground and complete day map.')
 print('PASS: strict 45-second quiet period, automatic wake, lamp timing, breakfast, all orders, cleanup, both drives and second bedtime.')
 print('PASS: actual server with service substitutes: intro handshake, checkpoint recovery, velocity clearing, gated quests and complete playable day.')
 print('Roblox Studio is unavailable here. Native rendering, animation, input and audio still require an engine playtest.')

@@ -18,7 +18,7 @@ function State.enterDream(s,now,c)
     set(s,"dream",now); s.dreamAt=now; return true
 end
 function State.collect(s,index)
-    if type(index)~="number" or index<1 or index>6 or index%1~=0 then return false end
+    if type(index)~="number" or index<1 or index>10 or index%1~=0 then return false end
     if s.phase~="dream" or s.lights[index] then return false end
     s.lights[index]=true; return true
 end

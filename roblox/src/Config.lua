@@ -1,7 +1,8 @@
--- Opening prototype. No game title is assigned.
+-- Nightwatchers: opening and day one.
 return {
     MinimumBedtime = 9,
     DreamTimeout = 90,
+    DreamInteractionCount = 10,
     CorruptionDelay = 45,
     CorruptionDuration = 38,
     NavigationCorruptionCap = .65,

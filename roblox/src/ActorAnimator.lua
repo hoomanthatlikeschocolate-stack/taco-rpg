@@ -31,6 +31,8 @@ function Animator:apply(pivot, time, pose)
     p.FaceEyeR.Size = p.FaceEyeL.Size
     for _, side in ipairs({-1,1}) do
         local leg = side < 0 and "Left" or "Right"
+        p[leg.."Arm"].Size=Vector3.new(.85,1.1,.9)
+        p[leg.."Forearm"].Size=Vector3.new(.72,.84,.8)
         local hipAngle = sit * math.pi/2 + step * .43 * side * (1-sit)
         local kneeAngle = -sit * math.pi/2 - math.max(0,-step*side)*.24*(1-sit)
         local hip = body * CFrame.new(side*.55,-.5,0) * CFrame.Angles(hipAngle,0,0)
@@ -46,20 +48,21 @@ function Animator:apply(pivot, time, pose)
         p[leg.."Forearm"].CFrame = elbow * CFrame.new(0,-.42,0)
         p[leg.."Hand"].CFrame = elbow * CFrame.new(0,-.97,0)
     end
-    if pose.reach and pose.reach > 0 and pose.target then
-        local shoulder = (body * CFrame.new(1.36,1.15,0)).Position
-        local ordinary = p.RightHand.Position
-        local target = ordinary:Lerp(pose.target,pose.reach)
+    for _,entry in ipairs({{"Right",1,pose.reach,pose.target},{"Left",-1,pose.leftReach,pose.leftTarget}}) do
+      local hand,side,amount,goal=entry[1],entry[2],entry[3],entry[4]
+      if amount and amount>0 and goal then
+        local shoulder = (body * CFrame.new(side*1.36,1.15,0)).Position
+        local ordinary = p[hand.."Hand"].Position
+        local target = ordinary:Lerp(goal,amount)
         local delta = target-shoulder; if delta.Magnitude > 2.5 then target=shoulder+delta.Unit*2.5 end
-        local elbow = shoulder:Lerp(target,.52) + body.RightVector*.12 + body.UpVector*.13
+        local elbow = shoulder:Lerp(target,.52) + body.RightVector*(side*.12) + body.UpVector*.13
         local function bone(part,a,b)
             part.Size = Vector3.new(part.Size.X,(b-a).Magnitude,part.Size.Z)
             part.CFrame = CFrame.lookAt((a+b)*.5,b) * CFrame.Angles(math.pi/2,0,0)
         end
-        bone(p.RightArm,shoulder,elbow); bone(p.RightForearm,elbow,target)
-        p.RightHand.CFrame = CFrame.new(target) * root.Rotation
-    else
-        p.RightArm.Size = Vector3.new(.85,1.1,.9); p.RightForearm.Size=Vector3.new(.72,.84,.8)
+        bone(p[hand.."Arm"],shoulder,elbow); bone(p[hand.."Forearm"],elbow,target)
+        p[hand.."Hand"].CFrame = CFrame.new(target) * root.Rotation
+      end
     end
 end
 return Animator

@@ -3,8 +3,8 @@ local s=State.new(0)
 assert(not State.enterDream(s,1,Config))
 assert(State.begin(s,0)); assert(not State.begin(s,1))
 assert(not State.enterDream(s,8,Config)); assert(State.enterDream(s,9,Config))
-for i=1,6 do assert(State.collect(s,i)); assert(not State.collect(s,i)) end
-assert(not State.collect(s,7))
+for i=1,10 do assert(State.collect(s,i)); assert(not State.collect(s,i)) end
+assert(not State.collect(s,11))
 for _,t in ipairs({9,10,20,40,53.99,54}) do
     assert(State.tick(s,t,1,Config)==nil); assert(s.corruption==0,'Exploration cannot corrupt the first 45 seconds')
     assert(not State.exit(s,t,0),'Dream doors cannot wake the player')
@@ -59,3 +59,24 @@ car.x=10; car.z=350; car.speed=0
 assert(Driving.canPark(car,10,350,23)); car.speed=9; assert(not Driving.canPark(car,10,350,23))
 assert(not Driving.canPark(Driving.new(10,350,0,0),10,350,4),'Cannot skip a drive from the start')
 assert(Config.CorruptionDelay==45 and Config.DreamTimeout>45)
+-- The new cloth bends locally; a lift cannot detach the foot/far edges.
+for _,open in ipairs({0,.25,.5,.75,1}) do
+    for _,loft in ipairs({0,.5,1}) do
+        for i=0,24 do
+            local u=i/24
+            local x,y,z=Cloth.point(u,0,open,loft)
+            assert(math.abs(x-(-10.35+u*6.7))<1e-8 and math.abs(y-2.35)<1e-8 and math.abs(z+2.85)<1e-8)
+            for j=0,24 do local a,b,c=Cloth.point(u,j/24,open,loft);assert(a==a and b==b and c==c and b>=2.3 and b<5.5) end
+        end
+    end
+end
+local x0,y0,z0=Cloth.point(0,.6,0,0)
+local x1,y1,z1=Cloth.point(0,.6,1,0)
+assert(x0==x1 and y0==y1 and z0==z1)
+local dx,dy,dz,rx,ry,rz,alpha=DreamMotion.offset('Float_WaterDrop1',2,10,-292,20,{},0,-290)
+assert(alpha==0)
+dx,dy,dz,rx,ry,rz,alpha=DreamMotion.offset('Float_WaterDrop1',2,10,-292,20,{[8]=10},0,-290)
+assert(alpha>.7 and dy>=0 and dy<5)
+local ax,ay,az=DreamMotion.offset('Float_Boat1Hull',-1.3,8.5,-295.2,20,{[8]=10},5,-310)
+local bx,by,bz=DreamMotion.offset('Float_Boat1Sail',-1.3,9.2,-295.2,20,{[8]=10},5,-310)
+assert(ax==bx and ay==by and az==bz,'Boat pieces must stay together')

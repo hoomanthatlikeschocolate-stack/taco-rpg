@@ -9,6 +9,8 @@ local shared=ReplicatedStorage:WaitForChild("OpeningShared")
 local Config=require(shared:WaitForChild("Config"))
 local State=require(shared:WaitForChild("State"))
 local Animator=require(shared:WaitForChild("ActorAnimator"))
+local Cloth=require(shared:WaitForChild("Cloth"))
+local DreamMotion=require(shared:WaitForChild("DreamMotion"))
 local Music=require(shared:WaitForChild("Music"))
 local remotes=ReplicatedStorage:WaitForChild("OpeningRemotes")
 local action,update=remotes:WaitForChild("Action"),remotes:WaitForChild("Update")
@@ -23,6 +25,9 @@ local actor,actorPivot,actorAnimator=nil,nil,nil
 local poseValues,tweens,decor,floaters,floors={},{},{},{},{}
 local recoveryToken,captionUntil,lastBand,lastGlitch=0,0,0,-1
 local focusPoint,reachTarget=Vector3.new(-5,3,-5),nil
+local coverReach=false
+local bookLabels,photoParts,trayParts,fridgeParts={},{},{},{}
+local lastBookBand,lastPhotoBand=-1,-1
 local dreamElapsed,interactionTimes=0,{}
 local controls,music,cameraLight=nil,Music.new(Config),nil
 local free={dream=true,morning=true,breakfast=true,leave=true,work=true,cleanup=true,["return"]=true,home=true}
@@ -80,15 +85,27 @@ local roomLight=room:WaitForChild("CeilingLight"):WaitForChild("RoomLight")
 local eyes={room:WaitForChild("EyeLeft"),room:WaitForChild("EyeRight")}
 local tv=room.TVScreen; local newsScreen=tv.NewsScreen
 local fridge=day.Kitchen.FridgeDoor; local fridgeCF,handleCF=fridge.CFrame,day.Kitchen.FridgeHandle.CFrame
+for _,p in ipairs(day.Kitchen:GetChildren()) do
+    if p:IsA("BasePart") and (p==fridge or p.Name=="FridgeHandle" or p.Name=="FridgeNote" or p.Name:match('^FridgeAttach_')) then fridgeParts[p]=p.CFrame end
+end
+for _,p in ipairs(day.Restaurant:GetDescendants()) do
+    if p:IsA("BasePart") then local kind=p.Name:match('^Tray(%a+)_');if kind then trayParts[p]=kind:lower() end end
+end
+for _,obj in ipairs(dream:GetDescendants()) do
+    if obj:IsA("TextLabel") and obj.Parent.Name:match('^DreamBookPage') then table.insert(bookLabels,obj) end
+    if obj:IsA("BasePart") and (obj.Name:match('^DreamPhotoHome_') or obj.Name:match('^DreamPhotoWork_')) then photoParts[obj]=obj.Transparency end
+end
 local carColors={}
 for _,model in ipairs({day.HomeCar,day.WorkCar}) do for _,p in ipairs(model:GetDescendants()) do if p:IsA("BasePart") then carColors[p]=p.Transparency end end end
 local panels={}
-for i=1,6 do panels[i]={part=room:WaitForChild("BlanketPanel"..i),stripe=room:WaitForChild("BlanketStripe"..i)} end
+for i=1,Cloth.Columns do for j=1,Cloth.Rows do
+    table.insert(panels,{i=i,j=j,part=room:WaitForChild("BlanketPatch"..i.."_"..j),stripe=room:WaitForChild("BlanketStitch"..i.."_"..j)})
+end end
 local clothOpen=create("NumberValue",nil,{Value=0}); local clothLoft=create("NumberValue",nil,{Value=0})
-for _,name in ipairs({"walk","sit","lean","look","reach","sleep","eyes"}) do poseValues[name]=create("NumberValue",nil,{Name=name,Value=0}) end
+for _,name in ipairs({"walk","sit","lean","look","reach","leftReach","sleep","eyes"}) do poseValues[name]=create("NumberValue",nil,{Name=name,Value=0}) end
 for _,p in ipairs(dream:GetDescendants()) do
     if p:IsA("BasePart") then
-        local data={cf=p.CFrame,color=p.Color}
+        local data={cf=p.CFrame,color=p.Color,trans=p.Transparency}
         if p.Name:sub(1,8)=="Distort_" then decor[p]=data
         elseif p.Name:sub(1,6)=="Float_" then floaters[p]=data end
         if p.Name:sub(1,8)=="Platform" then floors[p]=p.Color end
@@ -145,17 +162,20 @@ local function dayMood()
     roomLight.Brightness=1.6; roomLamp.Brightness=1.7
 end
 local function reset()
-    roomMood(); clothOpen.Value=0; clothLoft.Value=0; reachTarget=nil
+    roomMood(); clothOpen.Value=0; clothLoft.Value=0; reachTarget=nil;coverReach=false
     for _,v in pairs(poseValues) do v.Value=0 end
     for p,data in pairs(decor) do p.CFrame=data.cf; p.Color=data.color end
-    for p,data in pairs(floaters) do p.CFrame=data.cf; p.Color=data.color end
+    for p,data in pairs(floaters) do p.CFrame=data.cf; p.Color=data.color;p.Transparency=data.trans end
+    for p,trans in pairs(photoParts) do p.Transparency=trans end
+    for _,label in ipairs(bookLabels) do label.Text="YOU WERE HERE" end
+    for p in pairs(trayParts) do p.Transparency=1 end
     for p,color in pairs(floors) do p.Color=color end
     for _,eye in ipairs(eyes) do eye.Transparency=1; eye:FindFirstChildOfClass("PointLight").Brightness=0 end
     for i=1,3 do dream["Memory"..i].Transparency=0; dream["Memory"..i]:FindFirstChildOfClass("PointLight").Enabled=true end
     for _,p in ipairs(day.Kitchen:GetChildren()) do if p.Name=="Toast" then p.Transparency=1 end end
-    fridge.CFrame=fridgeCF; day.Kitchen.FridgeHandle.CFrame=handleCF
+    for p,cf in pairs(fridgeParts) do p.CFrame=cf end
     newsScreen.Report.Text=""; tv.TVGlow.Brightness=0; cars(true,false)
-    corruption=0; targetCorruption=0; interactionTimes={}; lastBand=0
+    corruption=0; targetCorruption=0; interactionTimes={}; lastBand=0;lastBookBand=-1;lastPhotoBand=-1
 end
 local function spawnActor(marker)
     if actor then actor:Destroy() end
@@ -164,6 +184,10 @@ local function spawnActor(marker)
     actorAnimator=Animator.new(actor)
 end
 local function destroyActor() if actor then actor:Destroy(); actor=nil end; actorAnimator=nil; actorPivot=nil end
+local function actorHead(visible)
+    if not actor then return end
+    for _,name in ipairs({"Head","Hair","FaceEyeL","FaceEyeR","Mouth"}) do actor[name].Transparency=visible and 0 or 1 end
+end
 local function moveActor(cf,duration,token)
     if token~=generation or not actor then return false end
     local value=create("CFrameValue",nil,{Value=actor:GetPivot()}); actorPivot=value
@@ -197,24 +221,25 @@ local function bedtime(token,again)
         pose(.3,{walk=0})
         if not moveActor(markers.ActorBedside.CFrame,.45,token) then return end
     end
-    -- Hand lifts the near edge. Cloth rotates around the far mattress edge.
-    reachTarget=Vector3.new(-3.52,3.3,-3.5); pose(.6,{reach=1,look=.4})
-    if not waitFor(.6,token) then return end
+    -- The right hand follows the lifted corner; the foot and far edge stay pinned.
+    coverReach=true;pose(.6,{reach=1,look=.4,lean=-.7})
+    if not moveActor(CFrame.new(-2,3.18,-2.3)*markers.ActorBedside.CFrame.Rotation,.6,token) then return end
     tween(clothOpen,.95,{Value=1})
     if not waitFor(1,token) then return end
-    pose(.4,{reach=0,look=0})
+    pose(.4,{reach=0,look=0,lean=0})
     local facingOut=markers.ActorBedside.CFrame*CFrame.Angles(0,math.pi,0)
     if not moveActor(facingOut,.45,token) then return end
     pose(.8,{sit=1})
     if not moveActor(markers.ActorSit.CFrame,.8,token) then return end
     pose(.65,{sit=.8,lean=.25})
     if not moveActor(CFrame.new(-5.7,3.8,-3.6)*markers.ActorSit.CFrame.Rotation,.65,token) then return end
-    pose(1.3,{sit=0,lean=0,sleep=1})
+    pose(1.3,{sit=0,lean=0,sleep=1});tween(clothLoft,1.3,{Value=1})
     if not moveActor(markers.ActorSleep.CFrame,1.3,token) then return end
     -- Already underneath the open blanket; settle it over the body.
-    clothLoft.Value=1; reachTarget=Vector3.new(-8.7,3.4,-6.3); pose(.4,{reach=.8})
-    tween(clothOpen,1.1,{Value=0}); if not waitFor(1.2,token) then return end
-    pose(.6,{reach=0,eyes=1})
+    pose(.4,{leftReach=1,reach=0})
+    if not waitFor(.4,token) then return end
+    tween(clothOpen,1.25,{Value=0}); if not waitFor(1.3,token) then return end
+    pose(.6,{leftReach=0,eyes=1})
     roomLamp.Brightness=0; if not waitFor(.9,token) then return end
     local head=actor.Head; focusPoint=head.Position
     tween(camera,1.2,{CFrame=CFrame.lookAt(head.Position+Vector3.new(1.5,4.3,4.2),head.Position),FieldOfView=52}).Completed:Wait()
@@ -225,12 +250,14 @@ local function bedtime(token,again)
     action:FireServer(again and "SleepAgain" or "EnterDream")
 end
 local function getUp(token)
+    coverReach=true
     tween(roomLamp,.55,{Brightness=2}); tween(roomLight,.55,{Brightness=1.3})
     focusPoint=Vector3.new(-5,3.4,-5.5)
     tween(camera,.8,{CFrame=CFrame.lookAt(markers.IntroCamera.Position,focusPoint),FieldOfView=65})
-    pose(.3,{eyes=0}); tween(clothOpen,.65,{Value=1})
+    pose(.3,{eyes=0,leftReach=1}); tween(clothOpen,.65,{Value=1})
     if not waitFor(.7,token) then return end
-    pose(.6,{sleep=0,sit=.8})
+    actorHead(true)
+    pose(.6,{sleep=0,sit=.8,leftReach=0})
     if not moveActor(CFrame.new(-5.7,3.8,-3.6)*markers.ActorSit.CFrame.Rotation,.6,token) then return end
     pose(.6,{sit=1})
     if not moveActor(markers.ActorSit.CFrame,.65,token) then return end
@@ -248,9 +275,10 @@ local function newsSequence(token,elapsed)
     pose(.85,{sit=1})
     if not moveActor(markers.ActorCouch.CFrame,.85,token) then return end
     if not waitFor(.4,token) then return end
-    camera.CameraType=Enum.CameraType.Scriptable; camera.FieldOfView=55
+    camera.CameraType=Enum.CameraType.Scriptable; camera.FieldOfView=58
     focusPoint=tv.Position
-    tween(camera,.9,{CFrame=CFrame.lookAt(markers.TVView.Position+Vector3.new(.3,0,2),focusPoint)})
+    tween(camera,.9,{CFrame=CFrame.lookAt(markers.TVView.Position,focusPoint)})
+    actorHead(false)
     tv.TVGlow.Brightness=1.1; newsScreen.Headline.Text="TWO OVERNIGHT DEATHS"
     local last=-1
     while token==generation and phase=="news" do
@@ -262,6 +290,7 @@ local function newsSequence(token,elapsed)
 end
 local function refreshPrompts()
     snapshot.phase=phase
+    for p,kind in pairs(trayParts) do p.Transparency=(phase=="work" and snapshot.job=="prepare" and snapshot.tray and snapshot.tray[kind]) and 0 or 1 end
     for _,obj in ipairs(day.Interactions:GetChildren()) do
         obj.Use.Enabled=obj.Name=="coworker" and (phase=="work" or phase=="cleanup" or phase=="return")
             or State.promptEnabled(snapshot,obj.Name,Config)
@@ -292,6 +321,7 @@ local function change(nextPhase,elapsed)
         tween(fade,.55,{BackgroundTransparency=0})
     elseif phase=="awake" then
         reset(); spawnActor(markers.ActorSleep); clothLoft.Value=1; poseValues.sleep.Value=1
+        actorHead(false)
         hideCharacter(true); control(false); player.CameraMode=Enum.CameraMode.Classic
         camera.CameraType=Enum.CameraType.Scriptable; camera.FieldOfView=63
         focusPoint=markers.EyeTarget.Position; camera.CFrame=CFrame.lookAt(markers.WakeCamera.Position,focusPoint)
@@ -374,10 +404,9 @@ end
 local function dayInteraction(kind)
     if kind=="fridge" then
         local hinge=CFrame.new(-14,4,22.9)
-        tween(fridge,.6,{CFrame=hinge*CFrame.Angles(0,math.rad(82),0)*hinge:Inverse()*fridgeCF})
-        tween(day.Kitchen.FridgeHandle,.6,{CFrame=hinge*CFrame.Angles(0,math.rad(82),0)*hinge:Inverse()*handleCF})
+        for p,cf in pairs(fridgeParts) do tween(p,.6,{CFrame=hinge*CFrame.Angles(0,math.rad(82),0)*hinge:Inverse()*cf}) end
         local token=generation
-        task.delay(1.8,function() if token==generation then tween(fridge,.6,{CFrame=fridgeCF}); tween(day.Kitchen.FridgeHandle,.6,{CFrame=handleCF}) end end)
+        task.delay(1.8,function() if token==generation then for p,cf in pairs(fridgeParts) do tween(p,.6,{CFrame=cf}) end end end)
     elseif kind=="toaster" then text("The toaster ticks. Wait for it to pop.",4)
     elseif kind=="eat" then
         for _,p in ipairs(day.Kitchen:GetChildren()) do if p.Name=="Toast" then p.Transparency=1 end end
@@ -422,13 +451,18 @@ local function waypoint()
     end
     return kind and day.Interactions[kind].Position or nil
 end
+local function clothPoint(u,v) return Vector3.new(Cloth.point(u,v,clothOpen.Value,clothLoft.Value)) end
 local function cloth()
-    local hinge=CFrame.new(-10.35,2.35,-4.85)*CFrame.Angles(0,0,math.rad(72)*clothOpen.Value)
-    for i,p in ipairs(panels) do
-        local x=(i-.5)*6.7/6; local height=math.sin(math.pi*x/6.7)*1.15*clothLoft.Value
-        local tilt=math.cos(math.pi*x/6.7)*.4*clothLoft.Value
-        p.part.CFrame=hinge*CFrame.new(x,height,0)*CFrame.Angles(0,0,tilt)
-        p.stripe.CFrame=p.part.CFrame*CFrame.new(0,.08,0)
+    for _,p in ipairs(panels) do
+        local u,v=(p.i-.5)/Cloth.Columns,(p.j-.5)/Cloth.Rows
+        local a,b=clothPoint(u-.5/Cloth.Columns,v),clothPoint(u+.5/Cloth.Columns,v)
+        local front,back=clothPoint(u,v+.5/Cloth.Rows),clothPoint(u,v-.5/Cloth.Rows)
+        local right=(b-a).Unit;local up=(back-front).Unit:Cross(right).Unit
+        local depth=right:Cross(up).Unit
+        p.part.Size=Vector3.new((b-a).Magnitude+.025,.09,(back-front).Magnitude+.025)
+        p.part.CFrame=CFrame.fromMatrix(clothPoint(u,v),right,up,depth)
+        p.stripe.Size=Vector3.new(.045,.018,p.part.Size.Z)
+        p.stripe.CFrame=p.part.CFrame*CFrame.new(0,.055,0)
     end
 end
 RunService:BindToRenderStep("OpeningCameraAndEffects",Enum.RenderPriority.Camera.Value+1,function(dt)
@@ -439,7 +473,8 @@ RunService:BindToRenderStep("OpeningCameraAndEffects",Enum.RenderPriority.Camera
     cloth()
     if actor and actorAnimator then
         local values={}; for name,value in pairs(poseValues) do values[name]=value.Value end
-        values.target=reachTarget or room.LampBulb.Position
+        values.target=coverReach and clothPoint(1,.3)+Vector3.new(0,.12,0) or reachTarget or room.LampBulb.Position
+        values.leftTarget=clothPoint(.94,.85)+Vector3.new(0,.1,0)
         actorAnimator:apply(actorPivot and actorPivot.Value or actor:GetPivot(),now,values)
     end
     music:update(dt,corruption)
@@ -489,15 +524,27 @@ RunService:BindToRenderStep("OpeningCameraAndEffects",Enum.RenderPriority.Camera
             p.Color=data.color:Lerp(Color3.fromRGB(25,20,41),mood*.75)
         end
         for p,data in pairs(floaters) do
-            local seed=data.cf.Position.X*.13+data.cf.Position.Z*.07
-            local y=math.sin(now*.65+seed)*.35
-            local rot=0
-            if p.Name:find("Rain") then y=(now*.7+seed)%6
-            elseif p.Name:find("Lantern") and interactionTimes[6] then y=y+math.min(18,(now-interactionTimes[6])*1.6)
-            elseif p.Name:find("TeaStar") and interactionTimes[5] then rot=(now-interactionTimes[5])*.8
-            elseif p.Name=="Float_Receiver" and interactionTimes[4] then y=y+math.max(0,1-(now-interactionTimes[4])/4) end
-            p.CFrame=data.cf*CFrame.new(0,y,0)*CFrame.Angles(0,rot,0)
+            local pos=data.cf.Position
+            local root=player.Character and player.Character:FindFirstChild('HumanoidRootPart')
+            local dx,dy,dz,rx,ry,rz,alpha=DreamMotion.offset(p.Name,pos.X,pos.Y,pos.Z,now,interactionTimes,root and root.Position.X,root and root.Position.Z)
+            -- World offsets keep each paper boat assembled while it follows the player.
+            p.CFrame=CFrame.new(pos+Vector3.new(dx,dy,dz))*data.cf.Rotation*CFrame.Angles(rx,ry,rz)
+            if alpha then p.Transparency=1-alpha end
             p.Color=data.color:Lerp(Color3.fromRGB(31,24,43),mood*.7)
+        end
+        local bookBand=interactionTimes[7] and math.floor((now-interactionTimes[7])/1.8)%3+1 or 0
+        if bookBand~=lastBookBand then
+            lastBookBand=bookBand
+            local words=({"THIS IS YOUR HOUSE","THIS IS YOUR SHIFT","YOU WERE HERE"})[bookBand] or "YOU WERE HERE"
+            for _,label in ipairs(bookLabels) do label.Text=words end
+        end
+        local photoBand=interactionTimes[9] and math.floor((now-interactionTimes[9])/2)%2 or 0
+        if photoBand~=lastPhotoBand then
+            lastPhotoBand=photoBand
+            for p in pairs(photoParts) do
+                local show=p.Name:match('^DreamPhotoHome_') and photoBand==0 or p.Name:match('^DreamPhotoWork_') and photoBand==1
+                p.Transparency=show and 0 or 1
+            end
         end
         for p,c in pairs(floors) do p.Color=c:Lerp(Color3.fromRGB(118,126,155),mood*.35) end
         local base=markers.ClockPivot.CFrame*CFrame.new(0,0,.55)

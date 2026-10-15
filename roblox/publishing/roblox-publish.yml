@@ -9,6 +9,7 @@ name: Publish Roblox game
       - 'roblox/tests/**'
       - 'roblox/build_place.py'
       - 'roblox/build_day.py'
+      - 'roblox/build_details.py'
       - 'roblox/check_project.py'
       - 'roblox/publish_place.py'
       - 'roblox/Opening.rbxlx'

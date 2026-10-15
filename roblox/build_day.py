@@ -77,7 +77,8 @@ def build_day(g):
     for z in range(55,375,16): part(street,'LaneMark',(.3,.03,7),(0,.02,z),(227,209,146),collide=False)
     for x in [-21,21]: part(street,'RoadEdge',(.15,.02,330),(x,.02,211),(227,220,194),collide=False)
     for x in [-68,105]: part(street,'WorldBarrier',(2,35,440),(x,15,200),collide=True,transparency=1)
-    for z in [45,380]: part(street,'RoadEnd',(42,6,1),(0,3,z),(117,123,118),'concrete')
+    for side in [-1,1]: part(street,'RoadEndGate'+str(side),(17,6,1),(side*12.5,3,45),(117,123,118),'concrete')
+    part(street,'RoadEnd',(42,6,1),(0,3,380),(117,123,118),'concrete')
     for i,z in enumerate(range(90,340,46)):
         for side in [-1,1]:
             x=side*42
@@ -163,7 +164,7 @@ def build_day(g):
     prompt('coworker',(69,3,365),'Talk','Coworker')
     for name,pos,yaw in [
         ('MorningSpawn',(-1.25,4,-2.3),0),('CouchStand',(-4.2,4,7),90),
-        ('ActorCouch',(-11,2.9,7.5),0),('ActorCouchApproach',(-11,3.18,5.15),180),('TVView',(-11,4.8,8.4),0),
+        ('ActorCouch',(-11,2.9,7.5),0),('ActorCouchApproach',(-11,3.18,5.15),180),('TVView',(-10.7,4.95,6.7),0),
         ('CarHome',(-10,2.3,62),180),('CarWork',(10,2.3,350),0),
         ('HomeArrival',(-4,4,61),0),('WorkArrival',(24,4,350),-90),
         ('WorkEntry',(55.5,4,343),-90)]:

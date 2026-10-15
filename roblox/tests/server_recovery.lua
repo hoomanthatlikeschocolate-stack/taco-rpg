@@ -35,7 +35,7 @@ local markers=folder({RoomSpawn=marker(0,4,8),DreamSpawn=marker(0,12,-232),Dream
 local coords={{0,-232},{-8,-254},{-15,-278},{0,-302},{12,-330},{2,-360},{-12,-387},{0,-444}}
 for i,p in ipairs(coords) do markers["Checkpoint"..i]=marker(p[1],12,p[2]) end
 local dream=folder({Walkable=folder({})})
-for i=1,6 do dream["Interaction"..i]=folder({Position=v(0,11,-280),Remember={Triggered=signal()}}) end
+for i=1,10 do dream["Interaction"..i]=folder({Position=v(0,11,-280),Remember={Triggered=signal()}}) end
 dream.HallwayReturn=folder({Position=v(-38,11,-404),Remember={Triggered=signal()}})
 dream.ExitPrompt=folder({Position=v(0,11,-446),Remember={Triggered=signal()}})
 local interactions=folder({})

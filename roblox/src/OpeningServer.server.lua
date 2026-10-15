@@ -21,6 +21,10 @@ local messages={
     "A voice says: 'Don't hurry. You have time here.' Then the phone begins to purr.",
     "The stars stir like sugar. Something enormous swims beneath them.",
     "The lantern rises. For a moment, you remember how to fly.",
+    "You know this sentence. The words move before you can finish reading it.",
+    "The tap pours upward. Little paper boats follow, as if they remember the way home.",
+    "Your bedroom is in the photograph. No, it is the restaurant. It feels like the same place.",
+    "Your coat lets go of the hanger. A handful of leaves remembers how to fly.",
 }
 local rayParams=RaycastParams.new()
 rayParams.FilterType=Enum.RaycastFilterType.Include
@@ -177,7 +181,7 @@ action.OnServerEvent:Connect(function(player,command,a,b)
         else update:FireClient(player,"Text",{text="Stop inside the marked parking area, then press E to park."}) end
     end
 end)
-for i=1,6 do
+for i=1,Config.DreamInteractionCount do
     local index=i; local obj=dream:WaitForChild("Interaction"..i)
     obj:WaitForChild("Remember").Triggered:Connect(function(player)
         local s=states[player]; local root=parts(player)
